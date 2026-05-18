@@ -5,6 +5,7 @@ import { UsersModule } from './users/users.module'
 import { EtsyModule } from './etsy/etsy.module'
 import { ApiKeysModule } from './api-keys/api-keys.module'
 import { HealthModule } from './health/health.module'
+import { BillingModule } from './billing/billing.module'
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { HealthModule } from './health/health.module'
     EtsyModule,
     ApiKeysModule,
     HealthModule,
+    BillingModule,
   ],
 })
 export class AppModule {}
