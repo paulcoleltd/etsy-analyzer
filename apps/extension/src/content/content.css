@@ -1,0 +1,13 @@
+/* Prevent Etsy styles from bleeding into extension elements */
+#ea-listing-panel,
+#ea-shop-bar,
+.ea-badge {
+  all: initial;
+  box-sizing: border-box;
+}
+
+#ea-listing-panel * ,
+#ea-shop-bar * ,
+.ea-badge * {
+  box-sizing: border-box;
+}

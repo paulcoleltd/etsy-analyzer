@@ -1,0 +1,28 @@
+{
+  "name": "@etsy-analyzer/extension",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev":        "vite build --watch",
+    "build":      "vite build",
+    "type-check": "tsc --noEmit",
+    "test":       "vitest run"
+  },
+  "dependencies": {
+    "@etsy-analyzer/types": "workspace:*",
+    "react":     "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/chrome":              "^0.0.268",
+    "@types/react":               "^18.3.3",
+    "@types/react-dom":           "^18.3.0",
+    "@vitejs/plugin-react":       "^4.3.1",
+    "typescript":                 "^5.4.5",
+    "vite":                       "^5.3.4",
+    "vite-plugin-web-extension": "^4.1.1",
+    "vitest":                     "^2.0.4",
+    "jsdom":                      "^24.1.1",
+    "@vitest/coverage-v8":        "^2.0.4"
+  }
+}
