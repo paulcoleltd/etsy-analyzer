@@ -1,0 +1,5 @@
+SCRAPE_QUEUE     = "scrape"
+GRADE_QUEUE      = "grade"
+ALERT_QUEUE      = "alerts"
+NOTIFY_QUEUE     = "notify"
+SYNC_QUEUE       = "sync"
