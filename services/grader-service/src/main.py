@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from src.deps import get_redis
 from src.routers import grade, bulk
+from src.errors import register_error_handlers
 
 
 @asynccontextmanager
@@ -22,6 +23,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+register_error_handlers(app)
 
 app.include_router(grade.router)
 app.include_router(bulk.router)

@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from src.config import settings
 from src.deps import get_es, get_redis
 from src.routers import search, niche, listing, shop, trending
+from src.errors import register_error_handlers
 
 
 @asynccontextmanager
@@ -32,6 +33,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+register_error_handlers(app)
 
 app.include_router(search.router)
 app.include_router(niche.router)

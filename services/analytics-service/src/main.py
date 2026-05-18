@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.routers import overview, revenue, listings, sync
+from src.errors import register_error_handlers
 
 
 @asynccontextmanager
@@ -19,6 +20,8 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+register_error_handlers(app)
 
 app.include_router(overview.router)
 app.include_router(revenue.router)
