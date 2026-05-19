@@ -80,5 +80,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 }
 
-const handler = NextAuth(authOptions)
+// NextAuth v4 handler — cast required for Next.js 14 App Router type compatibility
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const handler = NextAuth(authOptions) as any
 export { handler as GET, handler as POST }

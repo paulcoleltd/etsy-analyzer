@@ -47,7 +47,16 @@ export default function GraderPage() {
     }
   }
 
-  const gradeData = data as Record<string, unknown> | undefined
+  // Cast to the GradeReport-compatible shape; actual shape validated at runtime
+  const gradeData = data as {
+    etsy_listing_id: string
+    overall_grade: string
+    overall_score: number
+    dimension_scores: Record<string, number>
+    ai_suggestions: Record<string, unknown> | null
+    image_analysis: unknown[] | null
+    graded_at?: string | null
+  } | undefined
 
   return (
     <div className="animate-fade-up">

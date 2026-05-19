@@ -101,8 +101,8 @@ export default function ListingsPage() {
   }
 
   const { data: resp, isLoading } = useDashboardListings({
-    page,
-    limit: LIMIT,
+    page: String(page),
+    limit: String(LIMIT),
     sortBy: serverSortMap[sortId] ?? 'revenue',
     sortDir,
   })
