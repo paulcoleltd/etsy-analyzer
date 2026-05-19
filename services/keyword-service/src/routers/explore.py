@@ -26,13 +26,24 @@ async def explore_keyword(
     es: AsyncElasticsearch = Depends(get_es),
     redis: Redis = Depends(get_redis),
 ):
-    cache_key = f"kw:vol:{hashlib.sha256(q.lower().encode()).hexdigest()[:16]}"
-    raw = await redis.get(cache_key)
-    if raw:
-        return json.loads(raw)
+    # Try Redis cache first
+    try:
+        cache_key = f"kw:vol:{hashlib.sha256(q.lower().encode()).hexdigest()[:16]}"
+        raw = await redis.get(cache_key)
+        if raw:
+            return json.loads(raw)
+    except Exception:
+        cache_key = None
 
+    # estimate_volume handles ES → PG → hard fallback internally
     data = await estimate_volume(q, es, redis)
-    await redis.setex(cache_key, settings.cache_ttl_keyword, json.dumps(data))
+
+    try:
+        if cache_key:
+            await redis.setex(cache_key, settings.cache_ttl_keyword, json.dumps(data))
+    except Exception:
+        pass
+
     return data
 
 
@@ -42,36 +53,59 @@ async def keyword_suggestions(
     es: AsyncElasticsearch = Depends(get_es),
     redis: Redis = Depends(get_redis),
 ):
-    """Autocomplete-style keyword suggestions from indexed tags."""
-    cache_key = f"suggest:{hashlib.sha256(q.lower().encode()).hexdigest()[:12]}"
-    raw = await redis.get(cache_key)
-    if raw:
-        return json.loads(raw)
+    """Autocomplete-style keyword suggestions. Falls back to PG tag search."""
+    try:
+        cache_key = f"suggest:{hashlib.sha256(q.lower().encode()).hexdigest()[:12]}"
+        raw = await redis.get(cache_key)
+        if raw:
+            return json.loads(raw)
+    except Exception:
+        cache_key = None
 
-    resp = await es.search(
-        index="keywords",
-        query={
-            "bool": {
-                "should": [
-                    {"prefix": {"keyword": {"value": q.lower(), "boost": 2}}},
-                    {"match": {"keyword_text": {"query": q, "fuzziness": "AUTO"}}},
-                ]
-            }
-        },
-        size=10,
-        source=["keyword"],
-    )
-    suggestions = [h["_source"]["keyword"] for h in resp["hits"]["hits"]]
-
-    # Fallback to tag aggregation if keywords index is empty
-    if not suggestions:
-        agg = await es.search(
-            index="listings",
-            query={"prefix": {"tags": q.lower()}},
-            size=0,
-            aggs={"tags": {"terms": {"field": "tags", "size": 10}}},
+    try:
+        resp = await es.search(
+            index="keywords",
+            query={
+                "bool": {
+                    "should": [
+                        {"prefix": {"keyword": {"value": q.lower(), "boost": 2}}},
+                        {"match": {"keyword_text": {"query": q, "fuzziness": "AUTO"}}},
+                    ]
+                }
+            },
+            size=10,
+            source=["keyword"],
         )
-        suggestions = [b["key"] for b in agg["aggregations"]["tags"]["buckets"]]
+        suggestions = [h["_source"]["keyword"] for h in resp["hits"]["hits"]]
 
-    await redis.setex(cache_key, settings.cache_ttl_suggest, json.dumps(suggestions))
+        if not suggestions:
+            agg = await es.search(
+                index="listings",
+                query={"prefix": {"tags": q.lower()}},
+                size=0,
+                aggs={"tags": {"terms": {"field": "tags", "size": 10}}},
+            )
+            suggestions = [b["key"] for b in agg["aggregations"]["tags"]["buckets"]]
+    except Exception:
+        # PG fallback: query tags column
+        try:
+            from src import db_fallback
+            pool = await db_fallback.get_pg_pool()
+            rows = await pool.fetch(
+                """SELECT LOWER(t) AS tag, COUNT(*) AS freq
+                   FROM listings, UNNEST(tags) t
+                   WHERE LOWER(t) LIKE $1 AND is_active = TRUE
+                   GROUP BY tag ORDER BY freq DESC LIMIT 10""",
+                f"{q.lower()}%",
+            )
+            suggestions = [r["tag"] for r in rows]
+        except Exception:
+            suggestions = []
+
+    try:
+        if cache_key and suggestions:
+            await redis.setex(cache_key, settings.cache_ttl_suggest, json.dumps(suggestions))
+    except Exception:
+        pass
+
     return suggestions

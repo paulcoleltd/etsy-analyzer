@@ -4,6 +4,7 @@ GET  /v1/grade/history   — user's grade history
 """
 from __future__ import annotations
 
+import os
 import re
 from typing import Any
 
@@ -21,7 +22,7 @@ from redis.asyncio import Redis
 router = APIRouter(prefix="/v1/grade", tags=["grader"])
 
 # research-service URL for fetching listing data
-_RESEARCH_URL = "http://localhost:8002"
+_RESEARCH_URL = os.environ.get("RESEARCH_SERVICE_URL", "http://localhost:8012")
 
 
 class GradeRequest(BaseModel):

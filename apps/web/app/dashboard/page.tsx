@@ -2,20 +2,22 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { RefreshCw, Loader2, PlugZap, ArrowRight } from 'lucide-react'
+import { RefreshCw, Loader2, PlugZap, ArrowRight, DollarSign, ShoppingBag, TrendingUp, BarChart3, LayoutDashboard } from 'lucide-react'
 import { useDashboardOverview, useDashboardRevenue, useTriggerSync } from '@/hooks/useDashboard'
 import { KPICard } from '@/components/dashboard/KPICard'
 import { RevenueChart } from '@/components/dashboard/RevenueChart'
 import { TopListingsTable } from '@/components/dashboard/TopListingsTable'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { useQueryClient } from '@tanstack/react-query'
+import { cn } from '@/lib/utils'
 
 type Period = '7d' | '30d' | '90d'
 type Granularity = 'day' | 'week' | 'month'
 
 const PERIOD_CONFIG: Record<Period, { days: number; granularity: Granularity; label: string }> = {
-  '7d':  { days: 7,  granularity: 'day',   label: '7 days'   },
-  '30d': { days: 30, granularity: 'day',   label: '30 days'  },
-  '90d': { days: 90, granularity: 'week',  label: '90 days'  },
+  '7d':  { days: 7,  granularity: 'day',  label: '7 days'  },
+  '30d': { days: 30, granularity: 'day',  label: '30 days' },
+  '90d': { days: 90, granularity: 'week', label: '90 days' },
 }
 
 function daysAgo(n: number): string {
@@ -37,135 +39,113 @@ export default function DashboardPage() {
 
   const ov = overview as Record<string, any> | undefined
   const rv = revenueData as Record<string, any> | undefined
-
   const etsyConnected = ov?.etsy_connected ?? false
 
   function handleSync() {
     triggerSync(undefined, {
-      onSuccess: () => {
-        setTimeout(() => qc.invalidateQueries({ queryKey: ['dashboard'] }), 3000)
-      },
+      onSuccess: () => { setTimeout(() => qc.invalidateQueries({ queryKey: ['dashboard'] }), 3000) },
     })
   }
 
+  const lastSynced = ov?.last_synced
+    ? `Last synced ${new Date(ov.last_synced).toLocaleString()}`
+    : 'Connect your Etsy shop to see live data'
+
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">
-            {ov?.shop_name ? `${ov.shop_name}` : 'Dashboard'}
-          </h1>
-          {ov?.last_synced && (
-            <p className="mt-0.5 text-xs text-gray-400">
-              Last synced {new Date(ov.last_synced).toLocaleString()}
-            </p>
-          )}
-        </div>
+    <div className="space-y-5 animate-fade-up">
 
-        <div className="flex items-center gap-3">
-          {/* Period selector */}
-          <div className="flex gap-1 rounded-lg border bg-white p-0.5">
-            {(['7d', '30d', '90d'] as Period[]).map(p => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  period === p
-                    ? 'bg-orange-500 text-white shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {PERIOD_CONFIG[p].label}
-              </button>
-            ))}
+      {/* ── Page header ── */}
+      <PageHeader
+        icon={LayoutDashboard}
+        iconColor="text-orange-500"
+        iconBg="bg-orange-50"
+        title={ov?.shop_name ?? 'Dashboard'}
+        subtitle={lastSynced}
+        actions={
+          <div className="flex items-center gap-2">
+            {/* Period tabs */}
+            <div className="tab-row">
+              {(['7d', '30d', '90d'] as Period[]).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={cn('tab-item', period === p && 'tab-item-active')}
+                >
+                  {PERIOD_CONFIG[p].label}
+                </button>
+              ))}
+            </div>
+
+            {/* Sync */}
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="btn-ghost !px-3 !py-2 text-xs"
+            >
+              {syncing
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin text-orange-500" />
+                : <RefreshCw className="h-3.5 w-3.5" />}
+              Sync
+            </button>
           </div>
+        }
+      />
 
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="flex items-center gap-1.5 rounded-lg border bg-white px-3 py-2 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60"
-          >
-            {syncing
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <RefreshCw className="h-3.5 w-3.5" />}
-            Sync
-          </button>
-        </div>
-      </div>
-
-      {/* Etsy not connected banner */}
+      {/* ── Connect Etsy banner ── */}
       {!overviewLoading && !etsyConnected && (
-        <div className="flex items-center justify-between rounded-2xl border border-orange-200 bg-orange-50 px-5 py-4">
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-orange-200/80 bg-gradient-to-r from-orange-50 to-amber-50/40 px-5 py-4 shadow-sm">
           <div className="flex items-center gap-3">
-            <PlugZap className="h-5 w-5 text-orange-500" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-500 shadow-md shadow-orange-500/30">
+              <PlugZap className="h-4 w-4 text-white" />
+            </div>
             <div>
-              <p className="text-sm font-semibold text-orange-800">Connect your Etsy shop</p>
-              <p className="text-xs text-orange-600">Sync transactions and listing data to see your real analytics.</p>
+              <p className="text-sm font-bold text-orange-900">Connect your Etsy shop</p>
+              <p className="text-xs text-orange-600">Sync transactions and listing data to unlock real analytics.</p>
             </div>
           </div>
-          <Link
-            href="/settings"
-            className="flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-xs font-semibold text-white hover:bg-orange-600 transition-colors"
-          >
+          <Link href="/settings" className="btn-primary !py-2 !text-xs shrink-0">
             Connect <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
       )}
 
-      {/* KPI cards */}
+      {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KPICard
-          title="Revenue today"
-          data={ov?.revenue_today}
-          loading={overviewLoading}
-          format="currency"
-        />
-        <KPICard
-          title={`Revenue ${cfg.label}`}
-          data={ov?.revenue_30d}
-          loading={overviewLoading}
-          format="currency"
-        />
-        <KPICard
-          title="Orders 30d"
-          data={ov?.orders_30d}
-          loading={overviewLoading}
-          format="count"
-        />
-        <KPICard
-          title="Avg order value"
-          data={ov?.avg_order_value}
-          loading={overviewLoading}
-          format="currency"
-        />
+        <KPICard title="Revenue today"          data={ov?.revenue_today}   loading={overviewLoading} format="currency" icon={DollarSign}  color="orange" />
+        <KPICard title={`Revenue ${cfg.label}`} data={ov?.revenue_30d}     loading={overviewLoading} format="currency" icon={TrendingUp}  color="blue"   />
+        <KPICard title="Orders 30d"             data={ov?.orders_30d}      loading={overviewLoading} format="count"    icon={ShoppingBag} color="green"  />
+        <KPICard title="Avg order value"        data={ov?.avg_order_value} loading={overviewLoading} format="currency" icon={BarChart3}   color="purple" />
       </div>
 
-      {/* Revenue chart + Top listings */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2 rounded-2xl border bg-white p-5">
+      {/* ── Charts ── */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+
+        {/* Revenue chart */}
+        <div className="lg:col-span-2 card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">Revenue over time</p>
-            <span className="text-xs text-gray-400">{cfg.label}</span>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Revenue over time</p>
+              <p className="text-xs text-slate-400 mt-0.5">{cfg.label} · {cfg.granularity} intervals</p>
+            </div>
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-500">
+              {cfg.label}
+            </span>
           </div>
-          <RevenueChart
-            data={rv?.data}
-            loading={revenueLoading}
-            granularity={cfg.granularity}
-          />
+          <RevenueChart data={rv?.data} loading={revenueLoading} granularity={cfg.granularity} />
         </div>
 
-        <div className="rounded-2xl border bg-white p-5">
+        {/* Top listings */}
+        <div className="card p-5">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-sm font-semibold text-gray-700">Top listings</p>
-            <Link href="/dashboard/listings" className="text-xs text-orange-600 hover:underline">
-              View all
+            <div>
+              <p className="text-sm font-bold text-slate-800">Top listings</p>
+              <p className="text-xs text-slate-400 mt-0.5">By revenue · {cfg.label}</p>
+            </div>
+            <Link href="/dashboard/listings" className="text-[11px] font-semibold text-orange-600 hover:text-orange-700 transition-colors">
+              View all →
             </Link>
           </div>
-          <TopListingsTable
-            listings={ov?.top_listings}
-            loading={overviewLoading}
-          />
+          <TopListingsTable listings={ov?.top_listings} loading={overviewLoading} />
         </div>
       </div>
     </div>

@@ -5,23 +5,21 @@ interface Props {
   size?: 'sm' | 'md'
 }
 
-function scoreColor(score: number) {
-  if (score >= 70) return 'bg-green-100 text-green-700'
-  if (score >= 50) return 'bg-teal-100 text-teal-700'
-  if (score >= 30) return 'bg-amber-100 text-amber-700'
-  return 'bg-red-100 text-red-700'
+function scoreColor(s: number) {
+  if (s >= 70) return 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+  if (s >= 50) return 'bg-blue-50 text-blue-700 border border-blue-200'
+  if (s >= 30) return 'bg-amber-50 text-amber-700 border border-amber-200'
+  return 'bg-red-50 text-red-700 border border-red-200'
 }
 
 export function OpportunityBadge({ score, size = 'sm' }: Props) {
   if (score == null) return null
   return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full font-semibold tabular-nums',
-        scoreColor(score),
-        size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm',
-      )}
-    >
+    <span className={cn(
+      'inline-flex items-center rounded-full font-bold tabular-nums',
+      scoreColor(score),
+      size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-2.5 py-1 text-sm',
+    )}>
       {score.toFixed(0)}
     </span>
   )

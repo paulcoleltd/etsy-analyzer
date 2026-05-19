@@ -4,19 +4,21 @@ import { useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  User, CreditCard, Store, Key, Bell,
+  User, CreditCard, Store, Key,
   Loader2, CheckCircle2, ExternalLink, Trash2, Plus,
+  ShieldCheck, Lock, Settings,
 } from 'lucide-react'
 import { useBillingUsage, useBillingPortal, useApiKeys, useCreateApiKey, useRevokeApiKey } from '@/hooks/useBilling'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { cn } from '@/lib/utils'
 
 type Tab = 'profile' | 'billing' | 'etsy' | 'api-keys'
 
-const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
-  { id: 'profile',  label: 'Profile',      icon: User       },
-  { id: 'billing',  label: 'Billing',       icon: CreditCard },
-  { id: 'etsy',     label: 'Etsy shop',     icon: Store      },
-  { id: 'api-keys', label: 'API keys',      icon: Key        },
+const TABS: { id: Tab; label: string; icon: React.ElementType; desc: string }[] = [
+  { id: 'profile',  label: 'Profile',   icon: User,       desc: 'Account info'    },
+  { id: 'billing',  label: 'Billing',   icon: CreditCard, desc: 'Plan & usage'    },
+  { id: 'etsy',     label: 'Etsy Shop', icon: Store,      desc: 'Shop connection' },
+  { id: 'api-keys', label: 'API Keys',  icon: Key,        desc: 'Developer access'},
 ]
 
 export default function SettingsPage() {
@@ -26,35 +28,60 @@ export default function SettingsPage() {
   const plan = user?.plan ?? 'free'
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold text-gray-900">Settings</h1>
+    <div className="space-y-5 animate-fade-up">
 
-      <div className="flex gap-8">
-        {/* Sidebar nav */}
-        <nav className="w-48 shrink-0 space-y-0.5">
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setTab(id)}
-              disabled={id === 'api-keys' && plan !== 'agency'}
-              className={cn(
-                'flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors text-left',
-                tab === id
-                  ? 'bg-orange-50 text-orange-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900',
-                id === 'api-keys' && plan !== 'agency' && 'opacity-40 cursor-not-allowed',
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {label}
-              {id === 'api-keys' && plan !== 'agency' && (
-                <span className="ml-auto text-xs text-gray-400">Agency</span>
-              )}
-            </button>
-          ))}
+      <PageHeader
+        icon={Settings}
+        iconColor="text-orange-500"
+        iconBg="bg-orange-50"
+        title="Settings"
+        subtitle="Manage your account, billing, and integrations"
+      />
+
+      <div className="flex gap-5">
+
+        {/* Left nav */}
+        <nav className="w-52 shrink-0 space-y-1">
+          {TABS.map(({ id, label, icon: Icon, desc }) => {
+            const locked = id === 'api-keys' && plan !== 'agency'
+            return (
+              <button
+                key={id}
+                onClick={() => !locked && setTab(id)}
+                disabled={locked}
+                className={cn(
+                  'group flex w-full items-start gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all',
+                  tab === id
+                    ? 'border-orange-200/80 bg-white shadow-sm'
+                    : 'border-transparent hover:border-slate-200/70 hover:bg-white/70',
+                  locked && 'cursor-not-allowed opacity-40',
+                )}
+              >
+                <div className={cn(
+                  'mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all',
+                  tab === id
+                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-sm shadow-orange-500/30'
+                    : 'bg-slate-100 text-slate-400',
+                )}>
+                  <Icon className="h-3.5 w-3.5" />
+                </div>
+                <div className="min-w-0">
+                  <p className={cn('text-sm font-semibold leading-none', tab === id ? 'text-slate-900' : 'text-slate-600')}>
+                    {label}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-400">{desc}</p>
+                </div>
+                {locked && (
+                  <span className="ml-auto self-center rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-400">
+                    Agency
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </nav>
 
-        {/* Content */}
+        {/* Content panel */}
         <div className="flex-1 max-w-xl">
           {tab === 'profile'  && <ProfileTab user={user} />}
           {tab === 'billing'  && <BillingTab plan={plan} />}
@@ -66,77 +93,87 @@ export default function SettingsPage() {
   )
 }
 
-// ── Profile Tab ─────────────────────────────────────────────────
+/* ── Profile ─────────────────────────────────────────────── */
 
 function ProfileTab({ user }: { user: { name?: string; email?: string } | undefined }) {
+  const initials = (user?.name ?? user?.email ?? 'U').charAt(0).toUpperCase()
   return (
-    <div className="rounded-2xl border bg-white p-6 space-y-5">
-      <h2 className="text-base font-semibold text-gray-800">Profile</h2>
-      <div className="space-y-4">
-        <Field label="Name"  value={user?.name  ?? '—'} />
-        <Field label="Email" value={user?.email ?? '—'} />
+    <div className="space-y-4 animate-fade-in">
+      <div className="card p-6">
+        {/* Avatar row */}
+        <div className="mb-5 flex items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 text-xl font-bold text-white shadow-lg shadow-orange-500/25">
+            {initials}
+          </div>
+          <div>
+            <p className="font-bold text-slate-900">{user?.name ?? 'My Account'}</p>
+            <p className="text-sm text-slate-400">{user?.email}</p>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <FieldRow label="Display name" value={user?.name ?? '—'} />
+          <FieldRow label="Email address" value={user?.email ?? '—'} />
+        </div>
+
+        <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
+          <Lock className="h-3 w-3" /> To change your details, contact support.
+        </div>
       </div>
-      <p className="text-xs text-gray-400">
-        To change your name or email, contact support.
-      </p>
     </div>
   )
 }
 
-function Field({ label, value }: { label: string; value: string }) {
+function FieldRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-medium text-gray-500 mb-1">{label}</p>
-      <p className="rounded-lg border bg-gray-50 px-3 py-2 text-sm text-gray-700">{value}</p>
+      <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+      <p className="input !cursor-default !bg-slate-50">{value}</p>
     </div>
   )
 }
 
-// ── Billing Tab ─────────────────────────────────────────────────
+/* ── Billing ─────────────────────────────────────────────── */
 
 function BillingTab({ plan }: { plan: string }) {
   const { data: usage, isLoading } = useBillingUsage()
   const { mutate: openPortal, isPending: openingPortal } = useBillingPortal()
   const billing = usage as Record<string, any> | undefined
 
-  const PLAN_COLOR: Record<string, string> = {
-    free:    'bg-gray-100 text-gray-600',
-    starter: 'bg-blue-100 text-blue-700',
-    pro:     'bg-orange-100 text-orange-700',
-    agency:  'bg-purple-100 text-purple-700',
+  const PLAN_PILL: Record<string, string> = {
+    free:    'bg-slate-100 text-slate-600',
+    starter: 'bg-blue-50 text-blue-700',
+    pro:     'bg-gradient-to-r from-orange-500 to-orange-600 text-white',
+    agency:  'bg-gradient-to-r from-violet-500 to-violet-600 text-white',
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border bg-white p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-gray-800">Current plan</h2>
-          <span className={cn('rounded-full px-3 py-1 text-sm font-semibold capitalize', PLAN_COLOR[plan])}>
+    <div className="space-y-4 animate-fade-in">
+      {/* Plan card */}
+      <div className="card p-6">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="section-label">Current plan</p>
+            <p className="text-2xl font-extrabold capitalize text-slate-900">{plan}</p>
+            {billing?.planExpiresAt && (
+              <p className="mt-0.5 text-xs text-slate-400">
+                Renews {new Date(billing.planExpiresAt).toLocaleDateString()}
+              </p>
+            )}
+          </div>
+          <span className={cn('rounded-full px-3 py-1 text-xs font-bold capitalize', PLAN_PILL[plan] ?? PLAN_PILL.free)}>
             {plan}
           </span>
         </div>
 
-        {billing?.planExpiresAt && (
-          <p className="text-xs text-gray-400">
-            Renews {new Date(billing.planExpiresAt).toLocaleDateString()}
-          </p>
-        )}
-
-        <div className="flex gap-2 pt-2">
+        <div className="mt-5 flex gap-2">
           {plan === 'free' ? (
-            <a
-              href="/pricing"
-              className="rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
-            >
+            <a href="/pricing" className="btn-primary text-sm">
               Upgrade plan
             </a>
           ) : (
-            <button
-              onClick={() => openPortal()}
-              disabled={openingPortal}
-              className="flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              {openingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+            <button onClick={() => openPortal()} disabled={openingPortal} className="btn-ghost">
+              {openingPortal ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4 text-slate-400" />}
               Manage subscription
             </button>
           )}
@@ -144,31 +181,37 @@ function BillingTab({ plan }: { plan: string }) {
       </div>
 
       {/* Usage meters */}
-      <div className="rounded-2xl border bg-white p-6 space-y-4">
-        <h2 className="text-base font-semibold text-gray-800">Today&apos;s usage</h2>
+      <div className="card p-6">
+        <p className="mb-4 text-sm font-bold text-slate-800">Today&apos;s usage</p>
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-8 rounded-lg bg-gray-100 animate-pulse" />
+              <div key={i} className="space-y-2">
+                <div className="skeleton h-3 w-28" />
+                <div className="skeleton h-1.5 w-full" />
+              </div>
             ))}
           </div>
         ) : billing?.usage ? (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {Object.entries(billing.usage as Record<string, { used: number; limit: number }>).map(([key, val]) => {
-              const pct = val.limit === -1 ? 0 : Math.min(100, (val.used / Math.max(1, val.limit)) * 100)
               const unlimited = val.limit === -1
+              const pct = unlimited ? 0 : Math.min(100, (val.used / Math.max(1, val.limit)) * 100)
               return (
                 <div key={key}>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-600 capitalize">{key.replace(/_/g, ' ')}</span>
-                    <span className="text-xs tabular-nums text-gray-500">
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <span className="text-xs font-medium capitalize text-slate-600">{key.replace(/_/g, ' ')}</span>
+                    <span className="text-xs font-semibold tabular-nums text-slate-500">
                       {val.used} / {unlimited ? '∞' : val.limit}
                     </span>
                   </div>
                   {!unlimited && (
-                    <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
                       <div
-                        className={cn('h-full rounded-full transition-all', pct >= 90 ? 'bg-red-500' : 'bg-orange-500')}
+                        className={cn(
+                          'h-full rounded-full transition-all duration-500',
+                          pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-gradient-to-r from-orange-400 to-orange-500',
+                        )}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -178,40 +221,54 @@ function BillingTab({ plan }: { plan: string }) {
             })}
           </div>
         ) : (
-          <p className="text-sm text-gray-400">Usage data unavailable.</p>
+          <p className="text-sm text-slate-400">Usage data unavailable.</p>
         )}
       </div>
     </div>
   )
 }
 
-// ── Etsy Tab ────────────────────────────────────────────────────
+/* ── Etsy ─────────────────────────────────────────────────── */
 
 function EtsyTab() {
   const AUTH_URL = process.env.NEXT_PUBLIC_AUTH_URL ?? 'http://localhost:3001'
   return (
-    <div className="rounded-2xl border bg-white p-6 space-y-5">
-      <h2 className="text-base font-semibold text-gray-800">Etsy shop connection</h2>
-      <p className="text-sm text-gray-500">
-        Connect your Etsy shop to sync transactions, listing stats, and unlock your personal dashboard.
-      </p>
-      <div className="flex gap-3">
-        <a
-          href={`${AUTH_URL}/auth/etsy/connect`}
-          className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
-        >
+    <div className="space-y-4 animate-fade-in">
+      <div className="card p-6">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50">
+            <Store className="h-5 w-5 text-orange-500" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-slate-800">Etsy shop connection</p>
+            <p className="text-xs text-slate-400">Connect to sync real revenue data</p>
+          </div>
+        </div>
+        <p className="mb-5 text-sm leading-relaxed text-slate-500">
+          Connect your Etsy shop to sync transactions, listing stats, and unlock your personal revenue dashboard with live data.
+        </p>
+        <a href={`${AUTH_URL}/auth/etsy/connect`} className="btn-primary inline-flex">
           <Store className="h-4 w-4" />
           Connect Etsy shop
         </a>
       </div>
-      <p className="text-xs text-gray-400">
-        We use OAuth 2.0 with PKCE. We only request read permissions and never post on your behalf.
-      </p>
+
+      <div className="card p-5">
+        <div className="flex items-start gap-3">
+          <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-500" />
+          <div>
+            <p className="text-sm font-semibold text-slate-800">Your data is secure</p>
+            <p className="mt-1 text-xs leading-relaxed text-slate-500">
+              OAuth 2.0 with PKCE · Read-only access only · AES-256 encrypted tokens at rest · We never post on your behalf.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
-// ── API Keys Tab ────────────────────────────────────────────────
+/* ── API Keys ─────────────────────────────────────────────── */
 
 function ApiKeysTab() {
   const [name, setName] = useState('')
@@ -221,7 +278,6 @@ function ApiKeysTab() {
   const { data: keys, isLoading } = useApiKeys()
   const { mutate: createKey, isPending: creating } = useCreateApiKey()
   const { mutate: revokeKey } = useRevokeApiKey()
-
   const keyList = (keys as any[]) ?? []
 
   function handleCreate(e: React.FormEvent) {
@@ -237,39 +293,33 @@ function ApiKeysTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       {newKey && (
-        <div className="rounded-xl border border-green-200 bg-green-50 p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <p className="text-sm font-semibold text-green-800">API key created — copy it now</p>
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <div className="mb-2 flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            <p className="text-sm font-bold text-emerald-800">API key created — copy it now</p>
           </div>
-          <code className="block rounded bg-white border px-3 py-2 text-xs font-mono text-green-800 break-all">
+          <code className="block break-all rounded-xl border border-emerald-200 bg-white px-3.5 py-2.5 font-mono text-xs text-emerald-800">
             {newKey}
           </code>
-          <p className="mt-2 text-xs text-green-600">This key won&apos;t be shown again.</p>
+          <p className="mt-2 text-xs text-emerald-600">This key won&apos;t be shown again.</p>
         </div>
       )}
 
-      <div className="rounded-2xl border bg-white p-6 space-y-4">
-        <h2 className="text-base font-semibold text-gray-800">API keys</h2>
-        <p className="text-sm text-gray-500">
-          Use API keys to access the Etsy Analyzer API programmatically.
-        </p>
+      <div className="card p-6">
+        <p className="mb-1 text-sm font-bold text-slate-800">API keys</p>
+        <p className="mb-5 text-xs text-slate-500">Programmatic access to the Etsy Analyzer API.</p>
 
-        <form onSubmit={handleCreate} className="flex gap-2">
+        <form onSubmit={handleCreate} className="mb-5 flex gap-2">
           <input
             type="text"
             value={name}
             onChange={e => setName(e.target.value)}
             placeholder="Key name (e.g. My Integration)"
-            className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+            className="input flex-1"
           />
-          <button
-            type="submit"
-            disabled={creating || !name.trim()}
-            className="flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60 transition-colors"
-          >
+          <button type="submit" disabled={creating || !name.trim()} className="btn-primary">
             {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             Create
           </button>
@@ -278,28 +328,29 @@ function ApiKeysTab() {
         {isLoading ? (
           <div className="space-y-2">
             {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="h-12 rounded-lg bg-gray-100 animate-pulse" />
+              <div key={i} className="skeleton h-14 rounded-xl" />
             ))}
           </div>
         ) : keyList.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center py-4">No API keys yet.</p>
+          <div className="rounded-xl border-2 border-dashed border-slate-200 py-10 text-center">
+            <Key className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+            <p className="text-sm text-slate-400">No API keys yet.</p>
+          </div>
         ) : (
           <div className="space-y-2">
             {keyList.map((k: any) => (
-              <div key={k.id} className="flex items-center justify-between rounded-xl border px-4 py-3">
+              <div key={k.id} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                 <div>
-                  <p className="text-sm font-medium text-gray-800">{k.name}</p>
-                  <p className="text-xs text-gray-400 font-mono">{k.keyPrefix}••••••••</p>
+                  <p className="text-sm font-semibold text-slate-800">{k.name}</p>
+                  <p className="mt-0.5 font-mono text-xs text-slate-400">{k.keyPrefix}••••••••</p>
                 </div>
                 <div className="flex items-center gap-3">
                   {k.lastUsed && (
-                    <span className="text-xs text-gray-400">
-                      Last used {new Date(k.lastUsed).toLocaleDateString()}
-                    </span>
+                    <span className="text-xs text-slate-400">Used {new Date(k.lastUsed).toLocaleDateString()}</span>
                   )}
                   <button
                     onClick={() => revokeKey(k.id, { onSuccess: () => qc.invalidateQueries({ queryKey: ['api-keys'] }) })}
-                    className="rounded-lg p-1.5 text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors"
+                    className="rounded-lg p-1.5 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-400"
                     title="Revoke key"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

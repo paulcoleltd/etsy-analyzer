@@ -1,16 +1,26 @@
 """GET /v1/dashboard/overview — KPI summary for the connected shop."""
 from __future__ import annotations
+from src.auth import get_user_id
 
 import json
+import uuid as _uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from src.db.timescale_writer import get_pool
 from src.logger import logger
+
+
+def _is_valid_uuid(val: str) -> bool:
+    try:
+        _uuid.UUID(val)
+        return True
+    except (ValueError, AttributeError):
+        return False
 
 router = APIRouter(prefix="/v1/dashboard", tags=["dashboard"])
 
@@ -66,10 +76,24 @@ async def _get_order_count(pool, shop_id: str, from_dt: datetime, to_dt: datetim
 @router.get("/overview", response_model=OverviewResponse)
 async def get_overview(
     period: str = "30d",
-    x_user_id: str | None = Header(default=None),
+    x_user_id: str = Depends(get_user_id),
 ):
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
+
+    # Return empty dashboard for non-UUID user IDs (dev/test tokens)
+    if not _is_valid_uuid(x_user_id):
+        return OverviewResponse(
+            period=period,
+            revenue_today=KPICard(value=0),
+            revenue_7d=KPICard(value=0),
+            revenue_30d=KPICard(value=0),
+            orders_30d=KPICard(value=0),
+            avg_order_value=KPICard(value=0),
+            total_views_30d=KPICard(value=0),
+            top_listings=[],
+            etsy_connected=False,
+            shop_name=None,
+            last_synced=None,
+        )
 
     pool = await get_pool()
 

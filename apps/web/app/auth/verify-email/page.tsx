@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { CheckCircle2, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, ArrowRight } from 'lucide-react'
 import { api } from '@/lib/api-client'
+import { AuthShell } from '@/components/layout/AuthShell'
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams()
@@ -19,40 +20,57 @@ export default function VerifyEmailPage() {
   }, [token])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border p-10 text-center space-y-4">
+    <AuthShell tagline="One last step.">
+      <div className="rounded-2xl border border-slate-200/70 bg-white px-8 py-12 text-center shadow-sm">
+
         {status === 'loading' && (
           <>
-            <Loader2 className="h-12 w-12 text-orange-500 mx-auto animate-spin" />
-            <h2 className="text-xl font-bold text-gray-900">Verifying your email…</h2>
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50">
+              <Loader2 className="h-7 w-7 animate-spin text-orange-500" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Verifying your email…</h2>
+            <p className="mt-2 text-sm text-slate-400">This only takes a moment.</p>
           </>
         )}
+
         {status === 'success' && (
           <>
-            <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
-            <h2 className="text-xl font-bold text-gray-900">Email verified!</h2>
-            <p className="text-sm text-gray-600">Your account is ready. Sign in to get started.</p>
-            <Link
-              href="/auth/signin"
-              className="inline-block mt-2 rounded-lg bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 transition-colors"
-            >
-              Sign in
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-50">
+              <CheckCircle2 className="h-7 w-7 text-emerald-500" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Email verified!</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Your account is ready. Sign in to get started.
+            </p>
+            <Link href="/auth/signin" className="btn-primary mx-auto mt-6 w-fit">
+              Sign in <ArrowRight className="h-4 w-4" />
             </Link>
           </>
         )}
+
         {status === 'error' && (
           <>
-            <XCircle className="h-12 w-12 text-red-500 mx-auto" />
-            <h2 className="text-xl font-bold text-gray-900">Verification failed</h2>
-            <p className="text-sm text-gray-600">
-              This link is invalid or has expired. Try signing up again or request a new link.
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
+              <XCircle className="h-7 w-7 text-red-500" />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900">Verification failed</h2>
+            <p className="mt-2 text-sm text-slate-500">
+              This link is invalid or has expired.
             </p>
-            <Link href="/auth/signup" className="block text-sm font-medium text-orange-600 hover:underline">
-              Back to sign up
-            </Link>
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <Link href="/auth/signup" className="btn-primary w-fit">
+                Sign up again
+              </Link>
+              <Link
+                href="/auth/signin"
+                className="text-sm font-medium text-slate-500 hover:text-orange-600 transition-colors"
+              >
+                Back to sign in
+              </Link>
+            </div>
           </>
         )}
       </div>
-    </div>
+    </AuthShell>
   )
 }

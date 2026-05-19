@@ -10,12 +10,24 @@ from src.errors import register_error_handlers
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # warm connections on startup
-    get_es()
-    get_redis()
+    # warm connections on startup — ES may not be running locally; that's OK
+    try:
+        get_es()
+    except Exception:
+        pass
+    try:
+        get_redis()
+    except Exception:
+        pass
     yield
-    await get_es().close()
-    await get_redis().aclose()
+    try:
+        await get_es().close()
+    except Exception:
+        pass
+    try:
+        await get_redis().aclose()
+    except Exception:
+        pass
 
 
 app = FastAPI(

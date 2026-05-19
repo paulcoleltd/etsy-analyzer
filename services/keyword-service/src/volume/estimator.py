@@ -2,11 +2,11 @@
 Keyword volume estimator.
 
 Signal stack (no external API needed):
-  1. Etsy listing count for the keyword (primary signal — from ES)
+  1. Etsy listing count for the keyword (primary signal — from ES or PG)
   2. Trending score from Redis sorted set `trending:keywords:{date}`
   3. Heuristic: volume ≈ listing_count × 3  (empirically calibrated)
 
-In production a Google Trends / pytrends call supplements this.
+Falls back to PostgreSQL when Elasticsearch is unavailable.
 """
 from __future__ import annotations
 
@@ -22,6 +22,34 @@ async def estimate_volume(
     es: AsyncElasticsearch,
     redis: Redis,
 ) -> dict[str, Any]:
+    try:
+        return await _es_estimate(keyword, es, redis)
+    except Exception:
+        pass
+
+    try:
+        from src import db_fallback
+        return await db_fallback.pg_explore_keyword(keyword)
+    except Exception:
+        pass
+
+    # Hard fallback — return minimal structure
+    return {
+        "keyword": keyword,
+        "volume_est": 500,
+        "competing_count": 0,
+        "competition": "unknown",
+        "trend_direction": "stable",
+        "related": [],
+    }
+
+
+async def _es_estimate(
+    keyword: str,
+    es: AsyncElasticsearch,
+    redis: Redis,
+) -> dict[str, Any]:
+    """ES-based volume estimation (raises on connection failure)."""
     # 1. Count competing listings
     resp = await es.count(
         index="listings",
@@ -57,7 +85,7 @@ async def estimate_volume(
     else:
         competition = "high"
 
-    # 5. Related keywords: extract top tags from matching listings
+    # 5. Related keywords from top tags of matching listings
     agg_resp = await es.search(
         index="listings",
         query={

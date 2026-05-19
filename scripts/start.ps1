@@ -13,6 +13,37 @@ if (-not (Test-Path ".env") -and (Test-Path ".env.local")) {
 Write-Host "Starting Etsy Analyzer services..." -ForegroundColor Cyan
 Write-Host ""
 
+# Start portable PostgreSQL if not already running
+$pgBin = "C:\Users\Dell\pgsql\bin"
+$pgData = "C:\Users\Dell\pgsql\data"
+$pgLog = "C:\Users\Dell\pgsql\pg2.log"
+if (Test-Path "$pgBin\pg_isready.exe") {
+    $pgReady = & "$pgBin\pg_isready.exe" -U postgres -h 127.0.0.1 -p 5432 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "  Starting PostgreSQL..." -ForegroundColor Yellow
+        Start-Process -FilePath "$pgBin\postgres.exe" -ArgumentList "-D `"$pgData`" -p 5432" -RedirectStandardOutput $pgLog -RedirectStandardError $pgLog -WindowStyle Hidden
+        Start-Sleep -Seconds 3
+        Write-Host "  PostgreSQL started." -ForegroundColor Green
+    } else {
+        Write-Host "  PostgreSQL already running." -ForegroundColor Green
+    }
+}
+
+# Start Redis if not running
+$redisCli = "C:\Users\Dell\redis\redis-cli.exe"
+$redisServer = "C:\Users\Dell\redis\redis-server.exe"
+if (Test-Path $redisServer) {
+    $redisPing = & $redisCli -p 6379 ping 2>$null
+    if ($redisPing -ne "PONG") {
+        Write-Host "  Starting Redis..." -ForegroundColor Yellow
+        Start-Process -FilePath $redisServer -ArgumentList "--port 6379" -WindowStyle Hidden
+        Start-Sleep -Seconds 2
+        Write-Host "  Redis started." -ForegroundColor Green
+    } else {
+        Write-Host "  Redis already running." -ForegroundColor Green
+    }
+}
+
 # Start each service in a new PowerShell window
 $services = @(
     @{ Name = "Auth Service (3001)";       Cmd = "pnpm --filter @etsy-analyzer/auth-service dev" },

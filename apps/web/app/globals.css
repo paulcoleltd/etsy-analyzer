@@ -2,54 +2,210 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════
+   ETSY ANALYZER — DESIGN TOKENS
+   All colour decisions live here. Never use raw hex in components.
+═══════════════════════════════════════════════════════════════ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 20 14.3% 4.1%;
-    --card: 0 0% 100%;
-    --card-foreground: 20 14.3% 4.1%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 20 14.3% 4.1%;
-    --primary: 24.6 95% 53.1%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 60 4.8% 95.9%;
-    --secondary-foreground: 24 9.8% 10%;
-    --muted: 60 4.8% 95.9%;
-    --muted-foreground: 25 5.3% 44.7%;
-    --accent: 60 4.8% 95.9%;
-    --accent-foreground: 24 9.8% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 20 5.9% 90%;
-    --input: 20 5.9% 90%;
-    --ring: 24.6 95% 53.1%;
-    --radius: 0.5rem;
-  }
+    /* Surfaces */
+    --app-bg:          #eef1f8;   /* app shell background */
+    --surface:         #ffffff;   /* card / panel surface  */
+    --surface-raised:  #f8fafd;   /* input / secondary surface */
+    --border:          220 13% 91%;
+    --border-subtle:   220 13% 95%;
 
-  .dark {
-    --background: 20 14.3% 4.1%;
-    --foreground: 60 9.1% 97.8%;
-    --card: 24 9.8% 10%;
-    --card-foreground: 60 9.1% 97.8%;
-    --popover: 20 14.3% 4.1%;
-    --popover-foreground: 60 9.1% 97.8%;
-    --primary: 20.5 90.2% 48.2%;
-    --primary-foreground: 60 9.1% 97.8%;
-    --secondary: 12 6.5% 15.1%;
-    --secondary-foreground: 60 9.1% 97.8%;
-    --muted: 12 6.5% 15.1%;
-    --muted-foreground: 24 5.4% 63.9%;
-    --accent: 12 6.5% 15.1%;
-    --accent-foreground: 60 9.1% 97.8%;
-    --destructive: 0 72.2% 50.6%;
-    --destructive-foreground: 60 9.1% 97.8%;
-    --border: 12 6.5% 15.1%;
-    --input: 12 6.5% 15.1%;
-    --ring: 20.5 90.2% 48.2%;
+    /* Brand — orange */
+    --brand:           24.6 95% 53%;  /* #f97316 */
+    --brand-dark:      21  90% 48%;   /* #ea580c */
+    --brand-light:     33 100% 96%;   /* #fff7ed */
+    --brand-muted:     25  95% 93%;   /* #fed7aa light */
+
+    /* Sidebar navy */
+    --navy-deep:    #1a2035;
+    --navy-mid:     #1e2a45;
+    --navy-text:    #94a3b8;   /* slate-400 */
+    --navy-border:  rgba(255,255,255,0.09);
+
+    /* Semantic */
+    --success:   142 71% 45%;
+    --warning:    38 92% 50%;
+    --info:      217 91% 60%;
+    --error:       0 84% 60%;
+
+    /* Typography */
+    --foreground:       222 47% 11%;
+    --foreground-muted: 215 16% 47%;
+    --foreground-faint: 215 14% 65%;
+
+    /* shadcn compat */
+    --background: 220 20% 94%;
+    --card:            0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover:         0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary:         24.6 95% 53%;
+    --primary-foreground: 0 0% 100%;
+    --secondary:       220 14% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted:           220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent:          220 14% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive:     0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --input:           220 13% 91%;
+    --ring:            24.6 95% 53%;
+    --radius:          0.75rem;
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+═══════════════════════════════════════════════════════════════ */
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--app-bg);
+    @apply text-slate-800 antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-orange-500/60 ring-offset-2;
+  }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENT UTILITIES
+═══════════════════════════════════════════════════════════════ */
+@layer components {
+
+  /* Card — the default elevated surface */
+  .card {
+    @apply rounded-2xl border border-slate-200/70 bg-white shadow-sm;
+  }
+
+  /* Page header block used by every inside-app page */
+  .page-header {
+    @apply mb-6 flex flex-wrap items-center justify-between gap-4;
+  }
+
+  .page-title {
+    @apply text-xl font-bold text-slate-900;
+  }
+
+  .page-subtitle {
+    @apply mt-0.5 text-xs text-slate-400;
+  }
+
+  /* Section label (small caps above a group) */
+  .section-label {
+    @apply mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400;
+  }
+
+  /* Primary CTA button */
+  .btn-primary {
+    @apply inline-flex items-center gap-2 rounded-xl
+           bg-gradient-to-r from-orange-500 to-orange-600
+           px-4 py-2.5 text-sm font-semibold text-white
+           shadow-md shadow-orange-500/25
+           hover:from-orange-600 hover:to-orange-700
+           hover:shadow-lg hover:shadow-orange-500/30
+           active:scale-[0.98] transition-all duration-150
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  /* Ghost / secondary button */
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 rounded-xl
+           border border-slate-200 bg-white
+           px-4 py-2.5 text-sm font-semibold text-slate-700
+           shadow-sm hover:bg-slate-50 hover:border-slate-300
+           active:scale-[0.98] transition-all duration-150;
+  }
+
+  /* Search / text input */
+  .input {
+    @apply w-full rounded-xl border border-slate-200 bg-slate-50
+           px-3.5 py-2.5 text-sm text-slate-900
+           placeholder:text-slate-400
+           focus:border-orange-400 focus:bg-white focus:outline-none
+           focus:ring-2 focus:ring-orange-500/20
+           transition-all duration-150;
+  }
+
+  /* Pill tab row */
+  .tab-row {
+    @apply flex items-center gap-0.5 rounded-xl border border-slate-200
+           bg-white p-1 shadow-sm;
+  }
+
+  .tab-item {
+    @apply rounded-lg px-3.5 py-1.5 text-xs font-semibold
+           text-slate-500 hover:text-slate-700 transition-all;
+  }
+
+  .tab-item-active {
+    @apply bg-gradient-to-r from-orange-500 to-orange-600
+           text-white shadow-sm;
+  }
+
+  /* Underline tab (used in competitors page) */
+  .u-tab {
+    @apply flex items-center gap-2 border-b-2 border-transparent
+           px-4 py-3 text-sm font-semibold text-slate-500
+           hover:text-slate-700 transition-colors;
+  }
+
+  .u-tab-active {
+    @apply border-orange-500 text-orange-600;
+  }
+
+  /* Empty state dashed box */
+  .empty-state {
+    @apply rounded-2xl border-2 border-dashed border-slate-200
+           bg-white/60 py-20 text-center;
+  }
+
+  /* Shimmer skeleton */
+  .skeleton {
+    @apply rounded-full bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200
+           bg-[length:200%_100%] animate-[shimmer_1.5s_infinite];
+  }
+
+  /* Stat / metric badge */
+  .trend-up   { @apply inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700; }
+  .trend-down { @apply inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-semibold text-red-600; }
+  .trend-flat { @apply inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS
+═══════════════════════════════════════════════════════════════ */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up   { animation: fade-up   0.35s ease both; }
+.animate-fade-in   { animation: fade-in   0.2s  ease both; }
+.animate-slide-down { animation: slide-down 0.2s ease both; }

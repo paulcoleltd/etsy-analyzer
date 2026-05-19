@@ -5,6 +5,7 @@ from redis.asyncio import Redis
 from pydantic import BaseModel
 
 from src.deps import get_es, get_redis
+from src import db_fallback
 from src.config import settings
 from src.cache.redis_cache import get_cached, set_cached
 from src.ml.niche_scorer import opportunity_score
@@ -90,17 +91,33 @@ async def search_listings(
         else [{sort: {"order": "desc", "missing": "_last"}}, {"_score": "desc"}]
     )
 
-    resp = await es.search(
-        index="listings",
-        query=query,
-        sort=sort_clause,
-        size=limit,
-        source=True,
-    )
-
-    hits = resp["hits"]["hits"]
-    total = resp["hits"]["total"]["value"]
-    results = [_hit_to_result(h) for h in hits]
+    try:
+        resp = await es.search(
+            index="listings",
+            query=query,
+            sort=sort_clause,
+            size=limit,
+            source=True,
+        )
+        hits = resp["hits"]["hits"]
+        total = resp["hits"]["total"]["value"]
+        results = [_hit_to_result(h) for h in hits]
+    except Exception:
+        # Elasticsearch unavailable — fall back to PostgreSQL
+        try:
+            pg_result = await db_fallback.pg_search(
+                q=q, limit=limit, sort=sort,
+                category=category, min_price=min_price, max_price=max_price,
+                min_reviews=min_reviews, min_score=min_score,
+            )
+            try:
+                await set_cached(redis, "search", cache_key, pg_result, settings.cache_ttl_search)
+            except Exception:
+                pass
+            return pg_result
+        except Exception:
+            # Complete fallback: empty response
+            return {"keyword": q, "total": 0, "results": []}
 
     payload = SearchResponse(keyword=q, total=total, results=results).model_dump()
     await set_cached(redis, "search", cache_key, payload, settings.cache_ttl_search)

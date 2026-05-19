@@ -6,7 +6,7 @@ import { SnapshotService } from '../snapshot/snapshot.service'
 import { DiffService } from '../diff/diff.service'
 import { RedisService } from '../common/redis.service'
 
-const RESEARCH_URL = process.env.RESEARCH_SERVICE_URL ?? 'http://localhost:8002'
+const RESEARCH_URL = process.env.RESEARCH_SERVICE_URL ?? 'http://localhost:8012'
 
 @Injectable()
 export class AlertProcessor {

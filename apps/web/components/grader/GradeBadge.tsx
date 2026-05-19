@@ -6,23 +6,30 @@ interface Props {
 }
 
 const GRADE_STYLES: Record<string, string> = {
-  A: 'bg-green-100 text-green-700 ring-green-200',
-  B: 'bg-teal-100 text-teal-700 ring-teal-200',
-  C: 'bg-amber-100 text-amber-700 ring-amber-200',
-  D: 'bg-orange-100 text-orange-700 ring-orange-200',
-  F: 'bg-red-100 text-red-700 ring-red-200',
+  'A+': 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30',
+  A:    'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30',
+  'A-': 'bg-emerald-400 text-white shadow-lg shadow-emerald-400/30',
+  'B+': 'bg-blue-500 text-white shadow-lg shadow-blue-500/30',
+  B:    'bg-blue-500 text-white shadow-lg shadow-blue-500/30',
+  'B-': 'bg-blue-400 text-white shadow-lg shadow-blue-400/30',
+  'C+': 'bg-amber-500 text-white shadow-lg shadow-amber-500/30',
+  C:    'bg-amber-500 text-white shadow-lg shadow-amber-500/30',
+  'C-': 'bg-amber-400 text-white shadow-lg shadow-amber-400/30',
+  D:    'bg-orange-500 text-white shadow-lg shadow-orange-500/30',
+  F:    'bg-red-500 text-white shadow-lg shadow-red-500/30',
 }
 
 const SIZE_STYLES = {
-  sm: 'h-7 w-7 text-sm font-bold ring-1',
-  md: 'h-12 w-12 text-xl font-extrabold ring-2',
-  lg: 'h-20 w-20 text-4xl font-extrabold ring-2',
+  sm: 'h-7 w-7 text-xs font-extrabold',
+  md: 'h-12 w-12 text-xl font-extrabold',
+  lg: 'h-20 w-20 text-4xl font-extrabold',
 }
 
 export function GradeBadge({ grade, size = 'md' }: Props) {
-  const style = GRADE_STYLES[grade] ?? 'bg-gray-100 text-gray-600 ring-gray-200'
+  const baseGrade = grade.charAt(0).toUpperCase()
+  const style = GRADE_STYLES[grade] ?? GRADE_STYLES[baseGrade] ?? 'bg-slate-200 text-slate-600'
   return (
-    <span className={cn('inline-flex items-center justify-center rounded-full', style, SIZE_STYLES[size])}>
+    <span className={cn('inline-flex items-center justify-center rounded-2xl', style, SIZE_STYLES[size])}>
       {grade}
     </span>
   )

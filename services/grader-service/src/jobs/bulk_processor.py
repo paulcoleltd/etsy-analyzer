@@ -8,6 +8,8 @@ Progress key: grade:bulk:{job_id}  (Redis hash)
 """
 from __future__ import annotations
 
+import os
+
 import asyncio
 import json
 from typing import Any
@@ -22,7 +24,7 @@ from src.db import save_grade
 from src.config import settings
 from src.logger import logger
 
-_RESEARCH_URL = "http://localhost:8002"
+_RESEARCH_URL = os.environ.get("RESEARCH_SERVICE_URL", "http://localhost:8012")
 
 
 async def run_bulk_grade(job_data: dict[str, Any], redis: Redis) -> None:

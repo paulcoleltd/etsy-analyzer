@@ -9,10 +9,23 @@ from src.errors import register_error_handlers
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    get_es(); get_redis()
+    try:
+        get_es()
+    except Exception:
+        pass
+    try:
+        get_redis()
+    except Exception:
+        pass
     yield
-    await get_es().close()
-    await get_redis().aclose()
+    try:
+        await get_es().close()
+    except Exception:
+        pass
+    try:
+        await get_redis().aclose()
+    except Exception:
+        pass
 
 
 app = FastAPI(title="Keyword Service", version="1.0.0", lifespan=lifespan)

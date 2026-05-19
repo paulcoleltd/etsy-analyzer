@@ -1,17 +1,21 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Loader2, ArrowRight } from 'lucide-react'
+import { Search, Loader2, ArrowRight, Tag, BarChart2, TrendingUp } from 'lucide-react'
 import { useKeywordExplore, useKeywordTrends } from '@/hooks/useKeywords'
 import { CompetitionBadge } from '@/components/keywords/CompetitionBadge'
 import { TrendChart } from '@/components/keywords/TrendChart'
 import { formatNumber } from '@/lib/utils'
 import { useDebounce } from '@/hooks/useDebounce'
 import Link from 'next/link'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { cn } from '@/lib/utils'
+
+type Period = '3m' | '6m' | '12m'
 
 export default function KeywordsPage() {
   const [query, setQuery] = useState('')
-  const [period, setPeriod] = useState<'3m' | '6m' | '12m'>('12m')
+  const [period, setPeriod] = useState<Period>('12m')
   const debouncedQuery = useDebounce(query, 350)
 
   const { data: kwData, isLoading: kwLoading } = useKeywordExplore(debouncedQuery)
@@ -21,124 +25,155 @@ export default function KeywordsPage() {
   const trends = trendData as any
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b px-6 py-8">
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900">Keyword Explorer</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Discover search volume, competition, and trend data for any keyword.
-          </p>
-          <div className="mt-4 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              placeholder="Enter a keyword…"
-              className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-            />
-            {(kwLoading || trendLoading) && (
-              <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 animate-spin" />
-            )}
-          </div>
+    <div className="animate-fade-up">
+      <PageHeader
+        icon={Tag}
+        iconColor="text-blue-500"
+        iconBg="bg-blue-50"
+        title="Keyword Explorer"
+        subtitle="Search volume, competition data, and 12-month trend forecasting for any keyword"
+        badge="Live"
+        badgeColor="bg-blue-100 text-blue-700"
+      />
+
+      {/* Search */}
+      <div className="mb-5 card p-4">
+        <div className="relative">
+          <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          {(kwLoading || trendLoading) && (
+            <Loader2 className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-orange-500" />
+          )}
+          <input
+            type="text"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Enter a keyword (e.g. personalised gift, wall art)…"
+            className="input pl-10 pr-10"
+          />
         </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
-        {!debouncedQuery ? (
-          <div className="text-center py-16 text-gray-400">
-            <Search className="h-10 w-10 mx-auto mb-3 opacity-30" />
-            <p>Start typing to explore keywords</p>
-          </div>
-        ) : kwLoading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-24 rounded-xl bg-gray-200 animate-pulse" />
-            ))}
-          </div>
-        ) : kw ? (
-          <>
-            {/* Stats card */}
-            <div className="rounded-2xl border bg-white p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 capitalize">{kw.keyword}</h2>
-                  <div className="mt-2 flex items-center gap-3">
-                    <CompetitionBadge competition={kw.competition} />
-                    <span className="text-xs text-gray-500 capitalize">{kw.trend_direction} trend</span>
-                  </div>
-                </div>
-                <Link
-                  href={`/research/${encodeURIComponent(kw.keyword)}`}
-                  className="flex items-center gap-1 text-xs text-orange-600 hover:underline"
-                >
-                  Full niche analysis <ArrowRight className="h-3 w-3" />
-                </Link>
-              </div>
-
-              <div className="mt-5 grid grid-cols-3 gap-4 border-t pt-4">
-                <Stat label="Est. monthly searches" value={formatNumber(kw.volume_est)} highlight />
-                <Stat label="Competing listings" value={formatNumber(kw.competing_count)} />
-                <Stat label="Competition level" value={kw.competition} capitalize />
-              </div>
-            </div>
-
-            {/* Trend chart */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold text-gray-700">Search volume over time</p>
-                <div className="flex gap-1">
-                  {(['3m', '6m', '12m'] as const).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPeriod(p)}
-                      className={`rounded px-2.5 py-1 text-xs font-medium transition-colors ${period === p ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                    >
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {trends?.data ? (
-                <TrendChart data={trends.data} keyword={kw.keyword} />
-              ) : (
-                <div className="h-40 rounded-xl bg-gray-200 animate-pulse" />
-              )}
-            </div>
-
-            {/* Related keywords */}
-            {kw.related?.length > 0 && (
-              <div className="rounded-xl border bg-white p-5">
-                <p className="text-sm font-semibold text-gray-700 mb-3">Related keywords</p>
-                <div className="flex flex-wrap gap-2">
-                  {kw.related.map((rel: string) => (
-                    <button
-                      key={rel}
-                      onClick={() => setQuery(rel)}
-                      className="rounded-full border border-gray-200 px-3 py-1 text-sm text-gray-600 hover:border-orange-300 hover:bg-orange-50 transition-colors"
-                    >
-                      {rel}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <p className="text-center text-gray-400 py-8">No data found for this keyword yet.</p>
+        {!debouncedQuery && (
+          <p className="mt-2 text-xs text-slate-400">
+            Try: <button onClick={() => setQuery('personalised gifts')} className="text-orange-500 hover:underline">personalised gifts</button>
+            {' · '}
+            <button onClick={() => setQuery('wall art prints')} className="text-orange-500 hover:underline">wall art prints</button>
+            {' · '}
+            <button onClick={() => setQuery('handmade jewellery')} className="text-orange-500 hover:underline">handmade jewellery</button>
+          </p>
         )}
       </div>
-    </div>
-  )
-}
 
-function Stat({ label, value, highlight, capitalize }: { label: string; value: string; highlight?: boolean; capitalize?: boolean }) {
-  return (
-    <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className={`mt-1 text-lg font-bold ${highlight ? 'text-orange-600' : 'text-gray-900'} ${capitalize ? 'capitalize' : ''}`}>
-        {value}
-      </p>
+      {/* Empty state */}
+      {!debouncedQuery && (
+        <div className="empty-state">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
+            <Tag className="h-6 w-6 text-blue-400" />
+          </div>
+          <p className="text-base font-semibold text-slate-600">Explore keyword opportunities</p>
+          <p className="mt-1 text-sm text-slate-400">Type a keyword above to see volume, competition, and trends</p>
+        </div>
+      )}
+
+      {/* Results — two column layout */}
+      {debouncedQuery && (
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+
+          {/* Keyword data */}
+          <div className="card overflow-hidden">
+            <div className="flex items-center gap-2 border-b border-slate-100 px-5 py-3.5">
+              <BarChart2 className="h-4 w-4 text-slate-400" />
+              <p className="text-sm font-bold text-slate-800">Keyword data</p>
+              <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[11px] text-slate-500">
+                &ldquo;{debouncedQuery}&rdquo;
+              </span>
+            </div>
+
+            {kwLoading ? (
+              <div className="p-5 space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="skeleton h-3 w-28" />
+                    <div className="skeleton h-3 w-16" />
+                  </div>
+                ))}
+              </div>
+            ) : kw ? (
+              <div className="p-5">
+                <dl className="divide-y divide-slate-100">
+                  {[
+                    { label: 'Monthly searches',  value: kw.volume_est ? formatNumber(kw.volume_est) : '—' },
+                    { label: 'Competition',        value: <CompetitionBadge level={kw.competition} /> },
+                    { label: 'Trend direction',    value: kw.trend_direction ?? '—' },
+                    { label: 'Opportunity score',  value: kw.opportunity_score != null ? `${kw.opportunity_score}/100` : '—' },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex items-center justify-between py-3">
+                      <dt className="text-sm text-slate-500">{label}</dt>
+                      <dd className="text-sm font-semibold text-slate-900">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+
+                {kw.related?.length > 0 && (
+                  <div className="mt-4">
+                    <p className="section-label">Related keywords</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {kw.related.slice(0, 12).map((r: string) => (
+                        <button
+                          key={r}
+                          onClick={() => setQuery(r)}
+                          className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs text-slate-600 hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 transition-all"
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <Link
+                  href={`/keywords/${encodeURIComponent(debouncedQuery)}`}
+                  className="btn-ghost mt-5 w-full justify-center text-xs"
+                >
+                  Full keyword report <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            ) : (
+              <div className="p-10 text-center text-sm text-slate-400">No data found for this keyword.</div>
+            )}
+          </div>
+
+          {/* Trend chart */}
+          <div className="card overflow-hidden">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3.5">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-slate-400" />
+                <p className="text-sm font-bold text-slate-800">Search trend</p>
+              </div>
+              <div className="tab-row !p-0.5">
+                {(['3m', '6m', '12m'] as Period[]).map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPeriod(p)}
+                    className={cn('tab-item !px-2.5 !py-1 text-[11px]', period === p && 'tab-item-active')}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="p-5">
+              {trendLoading ? (
+                <div className="skeleton h-48 rounded-xl" />
+              ) : trends ? (
+                <TrendChart data={trends.data} period={period} />
+              ) : (
+                <div className="flex h-48 items-center justify-center rounded-xl border-2 border-dashed border-slate-200 text-sm text-slate-400">
+                  No trend data available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

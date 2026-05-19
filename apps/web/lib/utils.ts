@@ -23,5 +23,5 @@ export function gradeColor(grade: string): string {
     D: 'text-orange-600 bg-orange-50',
     F: 'text-red-600 bg-red-50',
   }
-  return map[grade] ?? 'text-gray-600 bg-gray-50'
+  return map[grade] ?? 'text-slate-600 bg-slate-50'
 }

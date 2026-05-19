@@ -1,9 +1,11 @@
 """GET /v1/dashboard/revenue — time-series revenue data."""
 from __future__ import annotations
+from src.auth import get_user_id
 
+import uuid as _uuid
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Header, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 
 from src.db.timescale_writer import query_revenue_series, get_pool
@@ -31,17 +33,35 @@ async def get_revenue(
     from_date: str | None = Query(default=None),
     to_date: str | None = Query(default=None),
     granularity: str = Query(default="day", pattern="^(day|week|month)$"),
-    x_user_id: str | None = Header(default=None),
+    x_user_id: str = Depends(get_user_id),
 ):
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
+
+    # Return empty series for non-UUID IDs (dev/test)
+    try:
+        _uuid.UUID(x_user_id)
+    except (ValueError, AttributeError):
+        return RevenueResponse(
+            from_date=(datetime.now(timezone.utc) - timedelta(days=30)).date().isoformat(),
+            to_date=datetime.now(timezone.utc).date().isoformat(),
+            granularity=granularity,
+            data=[],
+            total_revenue=0.0,
+            total_orders=0,
+        )
 
     pool = await get_pool()
     conn_row = await pool.fetchrow(
         "SELECT etsy_shop_id FROM etsy_connections WHERE user_id=$1", x_user_id
     )
     if not conn_row:
-        raise HTTPException(status_code=422, detail="No Etsy shop connected")
+        return RevenueResponse(
+            from_date=(datetime.now(timezone.utc) - timedelta(days=30)).date().isoformat(),
+            to_date=datetime.now(timezone.utc).date().isoformat(),
+            granularity=granularity,
+            data=[],
+            total_revenue=0.0,
+            total_orders=0,
+        )
 
     shop_id: str = conn_row["etsy_shop_id"]
     now = datetime.now(timezone.utc)

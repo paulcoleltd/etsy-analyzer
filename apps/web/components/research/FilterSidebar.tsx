@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { cn } from '@/lib/utils'
 
 const CATEGORIES = [
   'Jewelry', 'Clothing', 'Home & Living', 'Art & Collectibles',
@@ -20,15 +21,41 @@ interface Props {
   onChange: (f: Filters) => void
 }
 
+function NumInput({ label, value, onChange, placeholder }: {
+  label: string
+  value?: number
+  onChange: (v: number | undefined) => void
+  placeholder: string
+}) {
+  return (
+    <div>
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+      <input
+        type="number"
+        value={value ?? ''}
+        onChange={e => onChange(e.target.value ? Number(e.target.value) : undefined)}
+        placeholder={placeholder}
+        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-orange-400 focus:bg-white focus:outline-none focus:ring-1 focus:ring-orange-500/20 transition-all"
+      />
+    </div>
+  )
+}
+
 export function FilterSidebar({ filters, onChange }: Props) {
   return (
-    <aside className="w-56 shrink-0 space-y-6">
+    <div className="space-y-4">
+      {/* Category */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Category</p>
-        <div className="space-y-1">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Category</p>
+        <div className="space-y-0.5">
           <button
             onClick={() => onChange({ ...filters, category: undefined })}
-            className={`w-full text-left text-sm px-2 py-1 rounded ${!filters.category ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+            className={cn(
+              'w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors',
+              !filters.category
+                ? 'bg-orange-50 text-orange-700'
+                : 'text-slate-600 hover:bg-slate-100',
+            )}
           >
             All categories
           </button>
@@ -36,7 +63,12 @@ export function FilterSidebar({ filters, onChange }: Props) {
             <button
               key={cat}
               onClick={() => onChange({ ...filters, category: cat })}
-              className={`w-full text-left text-sm px-2 py-1 rounded ${filters.category === cat ? 'bg-orange-50 text-orange-700 font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+              className={cn(
+                'w-full rounded-lg px-2.5 py-1.5 text-left text-xs font-medium transition-colors',
+                filters.category === cat
+                  ? 'bg-orange-50 text-orange-700'
+                  : 'text-slate-600 hover:bg-slate-100',
+              )}
             >
               {cat}
             </button>
@@ -44,31 +76,40 @@ export function FilterSidebar({ filters, onChange }: Props) {
         </div>
       </div>
 
+      {/* Price range */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Min opportunity</p>
-        {[0, 30, 50, 70].map(v => (
-          <button
-            key={v}
-            onClick={() => onChange({ ...filters, minScore: v || undefined })}
-            className={`mr-2 mb-1 rounded-full px-3 py-1 text-xs border ${filters.minScore === (v || undefined) ? 'border-orange-400 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-          >
-            {v === 0 ? 'Any' : `${v}+`}
-          </button>
-        ))}
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Price (USD)</p>
+        <div className="flex gap-2">
+          <NumInput label="Min" value={filters.minPrice} onChange={v => onChange({ ...filters, minPrice: v })} placeholder="0" />
+          <NumInput label="Max" value={filters.maxPrice} onChange={v => onChange({ ...filters, maxPrice: v })} placeholder="Any" />
+        </div>
       </div>
 
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">Min reviews</p>
-        {[undefined, 10, 50, 100].map(v => (
-          <button
-            key={String(v)}
-            onClick={() => onChange({ ...filters, minReviews: v })}
-            className={`mr-2 mb-1 rounded-full px-3 py-1 text-xs border ${filters.minReviews === v ? 'border-orange-400 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-          >
-            {v == null ? 'Any' : `${v}+`}
-          </button>
-        ))}
-      </div>
-    </aside>
+      {/* Min reviews */}
+      <NumInput
+        label="Min reviews"
+        value={filters.minReviews}
+        onChange={v => onChange({ ...filters, minReviews: v })}
+        placeholder="e.g. 50"
+      />
+
+      {/* Min score */}
+      <NumInput
+        label="Min opportunity score"
+        value={filters.minScore}
+        onChange={v => onChange({ ...filters, minScore: v })}
+        placeholder="e.g. 50"
+      />
+
+      {/* Clear */}
+      {Object.values(filters).some(v => v != null) && (
+        <button
+          onClick={() => onChange({})}
+          className="w-full rounded-lg border border-slate-200 py-1.5 text-xs font-semibold text-slate-500 hover:bg-slate-50 transition-colors"
+        >
+          Clear all filters
+        </button>
+      )}
+    </div>
   )
 }

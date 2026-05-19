@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { cn, formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { RevenueBadge } from './RevenueBadge'
 import { OpportunityBadge } from './OpportunityBadge'
+import { Star, MessageSquare } from 'lucide-react'
 
 interface Listing {
   etsy_listing_id: string
@@ -15,40 +16,48 @@ interface Listing {
   tags: string[]
 }
 
-interface Props {
-  listing: Listing
-}
-
-export function ListingCard({ listing }: Props) {
+export function ListingCard({ listing }: { listing: Listing }) {
   return (
     <Link
       href={`/research/listing/${listing.etsy_listing_id}`}
-      className="group block rounded-xl border bg-white p-4 hover:border-orange-200 hover:shadow-sm transition-all"
+      className="group block rounded-2xl border border-slate-200/70 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-200/80 hover:shadow-md"
     >
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-sm font-medium text-gray-900 line-clamp-2 group-hover:text-orange-600 transition-colors">
+      {/* Title + bestseller badge */}
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-800 transition-colors group-hover:text-orange-600">
           {listing.title ?? 'Untitled listing'}
         </h3>
         {listing.is_bestseller && (
-          <span className="shrink-0 rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">
+            <Star className="h-2.5 w-2.5 fill-orange-500 text-orange-500" />
             Bestseller
           </span>
         )}
       </div>
 
-      <div className="mt-3 flex items-center gap-2 flex-wrap">
+      {/* Metric badges */}
+      <div className="flex flex-wrap items-center gap-2">
         <RevenueBadge revenue={listing.est_monthly_revenue} confidence={listing.revenue_confidence} />
-        <OpportunityBadge score={listing.opportunity_score} />
-        {listing.price_usd != null && (
-          <span className="text-xs text-gray-500">{formatCurrency(listing.price_usd)}</span>
+        {listing.opportunity_score != null && (
+          <span className="flex items-center gap-1">
+            <span className="text-[10px] text-slate-400">Score</span>
+            <OpportunityBadge score={listing.opportunity_score} />
+          </span>
         )}
       </div>
 
-      <div className="mt-2 flex items-center gap-3 text-xs text-gray-400">
-        <span>{listing.num_reviews.toLocaleString()} reviews</span>
-        {listing.tags.slice(0, 2).map(t => (
-          <span key={t} className="rounded bg-gray-100 px-1.5 py-0.5 text-gray-500">{t}</span>
-        ))}
+      {/* Footer */}
+      <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+        <div className="flex items-center gap-3 text-xs">
+          {listing.price_usd != null && (
+            <span className="font-bold text-slate-700">{formatCurrency(listing.price_usd)}</span>
+          )}
+          <span className="flex items-center gap-1 text-slate-400">
+            <MessageSquare className="h-3 w-3" />
+            {listing.num_reviews.toLocaleString()} reviews
+          </span>
+        </div>
+        <span className="font-mono text-[10px] text-slate-300">#{listing.etsy_listing_id.slice(-6)}</span>
       </div>
     </Link>
   )

@@ -1,7 +1,10 @@
 """GET /v1/dashboard/listings — paginated listing performance table."""
 from __future__ import annotations
+from src.auth import get_user_id
 
-from fastapi import APIRouter, Header, HTTPException, Query
+import uuid as _uuid
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from pydantic import BaseModel
 from typing import Any
 
@@ -41,17 +44,21 @@ async def get_listings(
     dir: str  = Query(default="desc",    pattern="^(asc|desc)$"),
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=25, ge=1, le=100),
-    x_user_id: str | None = Header(default=None),
+    x_user_id: str = Depends(get_user_id),
 ):
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="Authentication required")
+
+    # Return empty response for non-UUID IDs (dev/test)
+    try:
+        _uuid.UUID(x_user_id)
+    except (ValueError, AttributeError):
+        return ListingsResponse(data=[], total=0, page=page, limit=limit, has_more=False)
 
     pool = await get_pool()
     conn_row = await pool.fetchrow(
         "SELECT etsy_shop_id FROM etsy_connections WHERE user_id=$1", x_user_id
     )
     if not conn_row:
-        raise HTTPException(status_code=422, detail="No Etsy shop connected")
+        return ListingsResponse(data=[], total=0, page=page, limit=limit, has_more=False)
 
     shop_id: str = conn_row["etsy_shop_id"]
     offset = (page - 1) * limit

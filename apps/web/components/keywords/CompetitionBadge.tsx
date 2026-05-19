@@ -1,16 +1,18 @@
 import { cn } from '@/lib/utils'
 
-const MAP = {
-  low:    'bg-green-100 text-green-700',
-  medium: 'bg-amber-100 text-amber-700',
-  high:   'bg-red-100 text-red-700',
-} as const
+const MAP: Record<string, string> = {
+  low:    'border border-emerald-200 bg-emerald-50 text-emerald-700',
+  medium: 'border border-amber-200 bg-amber-50 text-amber-700',
+  high:   'border border-red-200 bg-red-50 text-red-700',
+}
 
-export function CompetitionBadge({ competition }: { competition: string }) {
+export function CompetitionBadge({ level }: { level: string }) {
   return (
-    <span className={cn('rounded-full px-2 py-0.5 text-xs font-medium capitalize',
-      MAP[competition as keyof typeof MAP] ?? 'bg-gray-100 text-gray-600')}>
-      {competition}
+    <span className={cn(
+      'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize',
+      MAP[level?.toLowerCase()] ?? 'border border-slate-200 bg-slate-100 text-slate-600',
+    )}>
+      {level ?? '—'}
     </span>
   )
 }

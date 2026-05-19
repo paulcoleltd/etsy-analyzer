@@ -1,23 +1,43 @@
 'use client'
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Search, Loader2, RotateCcw, LayoutGrid } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Search, Loader2, RotateCcw, Star, Sparkles } from 'lucide-react'
 import { useGradeMutation } from '@/hooks/useGrader'
 import { GradeReport } from '@/components/grader/GradeReport'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { cn } from '@/lib/utils'
+
+const HOW_IT_WORKS = [
+  { step: '1', color: 'from-orange-500 to-orange-600', shadow: 'shadow-orange-500/25', title: 'Paste a listing', desc: 'Enter any Etsy listing URL or numeric ID.' },
+  { step: '2', color: 'from-blue-500 to-blue-600',     shadow: 'shadow-blue-500/25',   title: 'AI analysis',    desc: 'We score title, tags, photos, price, and shipping.' },
+  { step: '3', color: 'from-emerald-500 to-emerald-600', shadow: 'shadow-emerald-500/25', title: 'Get your grade', desc: 'Receive an A–F grade with specific improvement tips.' },
+]
 
 export default function GraderPage() {
-  const [input, setInput] = useState('')
+  const searchParams = useSearchParams()
+  const [input, setInput] = useState(searchParams.get('id') ?? searchParams.get('url') ?? '')
   const [lastGraded, setLastGraded] = useState('')
   const { mutate: grade, data, isPending, error, reset } = useGradeMutation()
+
+  // Auto-grade when arriving via deep-link (?id=123 or ?url=https://...)
+  useEffect(() => {
+    const id  = searchParams.get('id')
+    const url = searchParams.get('url')
+    if (id || url) {
+      const val = id || url!
+      setInput(val)
+      if (id)  grade({ etsy_listing_id: id })
+      if (url) grade({ url })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = input.trim()
     if (!trimmed) return
-
     setLastGraded(trimmed)
-    // Detect URL vs plain ID
     if (trimmed.includes('etsy.com/listing/')) {
       grade({ url: trimmed })
     } else if (/^\d+$/.test(trimmed)) {
@@ -30,126 +50,111 @@ export default function GraderPage() {
   const gradeData = data as Record<string, unknown> | undefined
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b px-6 py-8">
-        <div className="max-w-2xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900">Listing Grader</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Paste an Etsy listing URL or ID to get an A–F grade with AI-powered improvement tips.
-          </p>
+    <div className="animate-fade-up">
+      <PageHeader
+        icon={Star}
+        iconColor="text-orange-500"
+        iconBg="bg-orange-50"
+        title="Listing Grader"
+        subtitle="Get an A–F grade with AI-powered improvement suggestions for any Etsy listing"
+        badge="AI powered"
+        badgeColor="bg-orange-100 text-orange-700"
+      />
 
-          <form onSubmit={handleSubmit} className="mt-4 flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                value={input}
-                onChange={e => setInput(e.target.value)}
-                placeholder="https://www.etsy.com/listing/123456789/... or listing ID"
-                className="w-full rounded-xl border border-gray-200 bg-white py-3 pl-10 pr-4 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-              />
-            </div>
+      {/* Input card */}
+      <div className="mb-5 card p-5">
+        <p className="mb-3 text-sm font-semibold text-slate-700">
+          Paste an Etsy listing URL or ID
+        </p>
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="https://www.etsy.com/listing/123456789/... or 123456789"
+              className="input pl-10"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isPending || !input.trim()}
+            className="btn-primary"
+          >
+            {isPending
+              ? <><Loader2 className="h-4 w-4 animate-spin" /> Analysing…</>
+              : <><Sparkles className="h-4 w-4" /> Grade it</>}
+          </button>
+        </form>
+        <p className="mt-2 text-xs text-slate-400">
+          Try listing ID: <button onClick={() => setInput('4493579933')} className="font-mono text-orange-500 hover:underline">4493579933</button>
+        </p>
+      </div>
+
+      {/* Loading */}
+      {isPending && (
+        <div className="card py-20 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
+            <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+          </div>
+          <p className="text-base font-semibold text-slate-700">Analysing your listing…</p>
+          <p className="mt-1 text-sm text-slate-400">Scoring title, tags, photos, price & shipping</p>
+        </div>
+      )}
+
+      {/* Error */}
+      {error && !isPending && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center shadow-sm">
+          <p className="text-sm font-semibold text-red-700">Could not grade this listing</p>
+          <p className="mt-1 text-xs text-red-500">Check the URL or ID and try again.</p>
+          <button
+            onClick={() => { reset(); setInput(lastGraded) }}
+            className="btn-ghost mx-auto mt-4 text-red-600 border-red-200 hover:bg-red-50"
+          >
+            <RotateCcw className="h-3.5 w-3.5" /> Try again
+          </button>
+        </div>
+      )}
+
+      {/* Grade report */}
+      {gradeData && !isPending && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="section-label">Grade report</p>
             <button
-              type="submit"
-              disabled={isPending || !input.trim()}
-              className="flex items-center gap-2 rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+              onClick={() => { reset(); setInput('') }}
+              className="btn-ghost text-xs px-3 py-1.5"
             >
-              {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Grade'}
+              <RotateCcw className="h-3 w-3" /> Grade another
             </button>
-          </form>
-
-          <div className="mt-3 flex items-center justify-between text-xs text-gray-400">
-            <span>Accepts listing URL or numeric ID</span>
-            <Link
-              href="/grader/bulk"
-              className="flex items-center gap-1 text-orange-600 hover:underline font-medium"
-            >
-              <LayoutGrid className="h-3 w-3" />
-              Bulk audit my shop (Pro+)
-            </Link>
+          </div>
+          <div className="card overflow-hidden">
+            <GradeReport data={gradeData} />
           </div>
         </div>
-      </div>
+      )}
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Loading skeleton */}
-        {isPending && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 rounded-2xl border bg-white p-6">
-              <div className="h-20 w-20 rounded-full bg-gray-200 animate-pulse" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 w-48 rounded bg-gray-200 animate-pulse" />
-                <div className="h-2.5 rounded-full bg-gray-200 animate-pulse" />
+      {/* How it works — shown when no result */}
+      {!gradeData && !isPending && !error && (
+        <div>
+          <p className="section-label">How it works</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {HOW_IT_WORKS.map(({ step, color, shadow, title, desc }) => (
+              <div key={step} className="card p-5">
+                <div className={cn(
+                  'mb-3 flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br text-sm font-bold text-white shadow-md',
+                  color, shadow,
+                )}>
+                  {step}
+                </div>
+                <p className="text-sm font-bold text-slate-800">{title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-slate-500">{desc}</p>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-24 rounded-xl bg-gray-200 animate-pulse" />
-              ))}
-            </div>
+            ))}
           </div>
-        )}
-
-        {/* Error state */}
-        {error && !isPending && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-            <p className="text-sm font-medium text-red-700">
-              {(error as { message?: string }).message ?? 'Could not grade this listing. Make sure the ID is valid and the listing is active.'}
-            </p>
-            <button
-              onClick={() => { reset(); setInput(lastGraded) }}
-              className="mt-3 flex items-center gap-1.5 mx-auto text-xs text-red-600 hover:underline"
-            >
-              <RotateCcw className="h-3 w-3" /> Try again
-            </button>
-          </div>
-        )}
-
-        {/* Grade result */}
-        {gradeData && !isPending && (
-          <div className="space-y-6">
-            <GradeReport
-              data={gradeData as unknown as Parameters<typeof GradeReport>[0]['data']}
-              title={null}
-            />
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                onClick={() => { reset(); setInput('') }}
-                className="flex items-center gap-2 rounded-xl border px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-              >
-                <RotateCcw className="h-3.5 w-3.5" /> Grade another
-              </button>
-              <Link
-                href="/grader/bulk"
-                className="flex items-center gap-2 rounded-xl bg-orange-50 border border-orange-200 px-4 py-2 text-sm font-medium text-orange-700 hover:bg-orange-100 transition-colors"
-              >
-                <LayoutGrid className="h-3.5 w-3.5" /> Bulk audit my shop
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!gradeData && !isPending && !error && (
-          <div className="text-center py-16">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-50">
-              <Search className="h-7 w-7 text-orange-400" />
-            </div>
-            <h2 className="text-lg font-semibold text-gray-700">Grade any Etsy listing</h2>
-            <p className="mt-2 text-sm text-gray-400 max-w-sm mx-auto">
-              Get a detailed A–F grade across title, tags, description, photos, price, and shipping — plus AI suggestions to improve each dimension.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-2">
-              {['Great title SEO', 'All 13 tags used', 'Strong photos', 'Free shipping'].map(label => (
-                <span key={label} className="rounded-full border bg-white px-3 py-1 text-xs text-gray-500">
-                  ✓ {label}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }
