@@ -363,6 +363,12 @@ class TestRealListingAnalysis:
     def test_revenue_is_positive(self, revenue):
         assert revenue["est_monthly_revenue_usd"] > 0
 
+    def test_revenue_is_realistic_range(self, revenue):
+        # With 180-day default age, 47 reviews, £12.99 price:
+        # expected roughly $200-$2000/mo (not $27k from the old 30-day default)
+        rev = revenue["est_monthly_revenue_usd"]
+        assert rev < 5000, f"Revenue ${rev:.0f} suspiciously high — check default age"
+
     def test_units_consistent_with_price(self, revenue, record):
         price = record.price_usd or 1.0
         rev = revenue["est_monthly_revenue_usd"]

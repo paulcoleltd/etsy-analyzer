@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { APP_GUARD } from '@nestjs/core'
 import { AuthController } from './auth.controller'
+import { DevVerifyController } from './dev-verify.controller'
 import { AuthService } from './auth.service'
 import { EmailService } from './email.service'
 import { JwtStrategy } from './jwt.strategy'
@@ -18,7 +19,7 @@ import { RedisService } from '../common/redis.service'
       signOptions: { expiresIn: '15m' },
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, DevVerifyController],
   providers: [
     AuthService,
     EmailService,

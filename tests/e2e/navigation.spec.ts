@@ -1,63 +1,45 @@
-/**
- * FLAKINESS REPORT — Existing E2E Test Suite
- * ============================================================
- *
- * HIGH RISK
- *
- * 1. research.spec.ts — "search returns results"
- *    Reason: Network dependency on research API. Slow/rate-limited
- *    response fires waitForSelector timeout before data arrives.
- *    Fix: page.route('**/v1/research/**', r => r.fulfill({ json: fixture }))
- *         Use expect(locator).toBeVisible({ timeout: 10_000 }) explicitly.
- *
- * 2. grader.spec.ts — "listing grade loads for a valid ID"
- *    Reason: SPA cycles through loading spinner before grade card;
- *    assertion may target detached DOM node if spinner resolves fast.
- *    Fix: await expect(page.getByRole('status')).toBeHidden() before
- *         asserting on grade card. Mock /v1/grade endpoint.
- *
- * 3. dashboard.spec.ts — "KPI cards render"
- *    Reason: Empty-state uncertainty on fresh CI DB (no listings synced).
- *    Fix: In beforeEach, intercept analytics API with fixture data so
- *         KPI cards always have values regardless of DB state.
- *
- * 4. competitors.spec.ts — "Alert feed shows notifications"
- *    Reason: Empty-state uncertainty — relies on seeded notifications.
- *    Fix: POST to notification endpoint in beforeEach or mock the response.
- *
- * 5. auth.spec.ts — "redirects to /dashboard after sign-in"
- *    Reason: NextAuth session cookie timing on slow CI boxes.
- *    Fix: Replace page.url() check with
- *         await page.waitForURL('**/dashboard**', { timeout: 15_000 }).
- *
- * 6. billing.spec.ts — "Stripe checkout button is clickable"
- *    Reason: Stripe.js loads async from external CDN — button may stay
- *    disabled/loading during test.
- *    Fix: page.route('https://js.stripe.com/**', r => r.fulfill({
- *           status: 200, body: '/* stub *\/' }))
- *
- * MEDIUM RISK
- *
- * 7. research.spec.ts — "Enter key navigates to keyword detail"
- *    Reason: 300ms debounce + SPA navigate — URL assertion may fire
- *    before React router updates.
- *    Fix: await page.waitForURL('**/research/**', { timeout: 8_000 })
- *         then assert URL pattern.
- *
- * 8. dashboard.spec.ts — "date filter updates revenue chart"
- *    Reason: Date.now() calls → timezone differences on CI runners.
- *    Fix: page.clock.install({ time: '2025-01-15T12:00:00Z' })
- *         (Playwright ≥ 1.45).
- * ============================================================
- */
+// FLAKINESS REPORT -- Existing E2E Test Suite
+// ============================================================
+// HIGH RISK
+// 1. research.spec.ts "search returns results"
+//    Reason: Network dependency; waitForSelector fires before data arrives.
+//    Fix: page.route('** /v1/research/**', r => r.fulfill({ json: fixture }))
+//    STATUS: Fixed via mockResearchSearch() in fixtures.ts
+// 2. grader.spec.ts "listing grade loads for a valid ID"
+//    Reason: SPA spinner -> grade card race.
+//    Fix: await expect(page.getByRole('status')).toBeHidden() before grade card.
+//    STATUS: Fixed via mockGrade() in fixtures.ts
+// 3. dashboard.spec.ts "KPI cards render"
+//    Reason: Empty-state uncertainty on fresh CI DB.
+//    Fix: Mock analytics API in beforeEach.
+//    STATUS: Fixed via mockDashboardOverview() in fixtures.ts
+// 4. competitors.spec.ts "Alert feed shows notifications"
+//    Reason: Relies on seeded notifications.
+//    Fix: Mock notification API or POST a notification in beforeEach.
+// 5. auth.spec.ts "redirects to /dashboard after sign-in"
+//    Reason: NextAuth cookie timing on slow CI.
+//    Fix: Replace page.url() with page.waitForURL('**/dashboard**', { timeout: 15_000 })
+// 6. billing.spec.ts "Stripe checkout button is clickable"
+//    Reason: Stripe.js CDN load blocks button render.
+//    Fix: Use mockStripe() from fixtures.ts in beforeEach
+//    STATUS: Fixed via mockStripe() in fixtures.ts
+// MEDIUM RISK
+// 7. research.spec.ts "Enter key navigates to keyword detail"
+//    Reason: 300ms debounce + SPA navigate race.
+//    Fix: page.waitForURL('**/research/**', { timeout: 8_000 })
+// 8. dashboard.spec.ts "date filter updates revenue chart"
+//    Reason: Date.now() timezone differences on CI.
+//    Fix: page.clock.install({ time: '2025-01-15T12:00:00Z' }) (Playwright >= 1.45)
+// ============================================================
+
 import { test, expect, type Page } from '@playwright/test'
 import { signIn } from './helpers'
 
 const NAV_ITEMS = [
-  { label: 'Dashboard',   href: '/dashboard',   heading: 'Dashboard'   },
-  { label: 'Research',    href: '/research',    heading: 'Niche Research' },
-  { label: 'Keywords',    href: '/keywords',    heading: 'Keyword Explorer' },
-  { label: 'Grader',      href: '/grader',      heading: 'Listing Grader' },
+  { label: 'Dashboard',   href: '/dashboard',   heading: 'Dashboard'            },
+  { label: 'Research',    href: '/research',    heading: 'Niche Research'        },
+  { label: 'Keywords',    href: '/keywords',    heading: 'Keyword Explorer'      },
+  { label: 'Grader',      href: '/grader',      heading: 'Listing Grader'        },
   { label: 'Competitors', href: '/competitors', heading: 'Competitor Intelligence' },
 ] as const
 
@@ -66,9 +48,9 @@ async function settle(page: Page, path: string) {
   await page.waitForLoadState('domcontentloaded')
 }
 
-// ── Sidebar renders correctly ────────────────────────────────────────────────
+// -- Sidebar renders correctly -----------------------------------------------
 
-test.describe('Sidebar navigation — authenticated', () => {
+test.describe('Sidebar navigation -- authenticated', () => {
   test.beforeEach(async ({ page }) => {
     await signIn(page)
     await settle(page, '/dashboard')
@@ -86,13 +68,13 @@ test.describe('Sidebar navigation — authenticated', () => {
   })
 })
 
-// ── Clicking nav items loads correct page ────────────────────────────────────
+// -- Clicking nav items loads correct page ------------------------------------
 
 test.describe('Sidebar routing', () => {
   test.beforeEach(async ({ page }) => { await signIn(page) })
 
   for (const item of NAV_ITEMS) {
-    test(`"${item.label}" → ${item.href} with correct h1`, async ({ page }) => {
+    test(`"${item.label}" -> ${item.href} with correct h1`, async ({ page }) => {
       await settle(page, '/dashboard')
       await page.locator(`a[href="${item.href}"]`).click()
       await page.waitForURL(`**${item.href}**`, { timeout: 12_000 })
@@ -101,7 +83,7 @@ test.describe('Sidebar routing', () => {
   }
 })
 
-// ── Auth guards redirect unauthenticated users ────────────────────────────────
+// -- Auth guards redirect unauthenticated users --------------------------------
 
 test.describe('Auth guards', () => {
   const protectedRoutes = ['/dashboard', '/research', '/keywords', '/grader', '/competitors', '/settings']
@@ -115,9 +97,9 @@ test.describe('Auth guards', () => {
   }
 })
 
-// ── Public pages accessible without auth ─────────────────────────────────────
+// -- Public pages accessible without auth -------------------------------------
 
-test.describe('Public pages — no auth required', () => {
+test.describe('Public pages -- no auth required', () => {
   test('pricing page accessible without auth', async ({ page }) => {
     const res = await page.goto('/pricing')
     expect(res?.status()).toBe(200)
@@ -139,7 +121,7 @@ test.describe('Public pages — no auth required', () => {
   })
 })
 
-// ── Deep-link pre-filling ─────────────────────────────────────────────────────
+// -- Deep-link pre-filling ----------------------------------------------------
 
 test.describe('Deep-link behaviour', () => {
   test.beforeEach(async ({ page }) => { await signIn(page) })
@@ -159,7 +141,7 @@ test.describe('Deep-link behaviour', () => {
   })
 })
 
-// ── Browser history ───────────────────────────────────────────────────────────
+// -- Browser history ----------------------------------------------------------
 
 test.describe('Browser history', () => {
   test.beforeEach(async ({ page }) => { await signIn(page) })

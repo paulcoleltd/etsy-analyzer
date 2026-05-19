@@ -123,7 +123,7 @@ class RevenueEstimator:
         return int(self._category_encoder.transform([cat])[0])
 
     def _features(self, listing: dict[str, Any]) -> list[float]:
-        age = max(1, int(listing.get("listing_age_days") or 30))
+        age = max(1, int(listing.get("listing_age_days") or self._DEFAULT_AGE_DAYS))
         reviews = int(listing.get("num_reviews") or 0)
         velocity = reviews / (age / 30)  # reviews per 30 days
         return [
@@ -144,10 +144,15 @@ class RevenueEstimator:
         monthly_revenue = max(0.0, float(self._model.predict(X)[0]))
         return self._format_result(listing, monthly_revenue)
 
+    # Default age when listing_age_days is unknown.
+    # 30 days was unrealistically low (treats all reviews as brand new → inflated velocity).
+    # 180 days (6 months) is a conservative estimate for an established listing with reviews.
+    _DEFAULT_AGE_DAYS = 180
+
     def _heuristic(self, listing: dict[str, Any]) -> dict[str, Any]:
         """Simple heuristic when no trained model is available."""
         reviews = int(listing.get("num_reviews") or 0)
-        age = max(1, int(listing.get("listing_age_days") or 30))
+        age = max(1, int(listing.get("listing_age_days") or self._DEFAULT_AGE_DAYS))
         price = float(listing.get("price_usd") or 20.0)
 
         # ~4 reviews per 100 orders (industry average)
