@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm --filter @etsy-analyzer/types build && pnpm --filter @etsy-analyzer/config build && pnpm --filter @etsy-analyzer/db build && pnpm --filter @etsy-analyzer/web build",
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "rootDirectory": "apps/web",
+  "rewrites": [
+    { "source": "/api/auth/:path*", "destination": "/api/auth/:path*" }
+  ]
+}
