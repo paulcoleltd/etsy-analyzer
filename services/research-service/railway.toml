@@ -1,0 +1,11 @@
+# Railway service config for research-service
+# Build context is repo root; dockerfile is relative to root.
+[build]
+builder = "dockerfile"
+dockerfilePath = "services/research-service/Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

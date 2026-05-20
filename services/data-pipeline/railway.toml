@@ -1,0 +1,9 @@
+# Railway service config for data-pipeline
+# Build context is repo root; dockerfile is relative to root.
+[build]
+builder = "dockerfile"
+dockerfilePath = "services/data-pipeline/Dockerfile"
+
+[deploy]
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

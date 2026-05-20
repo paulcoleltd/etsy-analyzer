@@ -1,0 +1,37 @@
+# Node
+**/node_modules
+**/.next
+**/dist
+**/.turbo
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.venv
+**/venv
+**/*.egg-info
+**/.pytest_cache
+
+# Logs & local state
+**/*.log
+**/.env
+**/.env.local
+**/.env*.local
+
+# Git & IDE
+.git
+.gitignore
+**/.DS_Store
+**/*.swp
+**/.idea
+**/.vscode
+
+# Test artefacts
+**/coverage
+**/test-results
+**/allure-results
+
+# Docker
+**/Dockerfile
+**/.dockerignore
