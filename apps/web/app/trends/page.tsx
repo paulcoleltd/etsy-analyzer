@@ -31,7 +31,10 @@ export default function TrendsPage() {
   const { data: trendingData, isLoading: trendingLoading } = useTrending()
   const { data: chartData, isLoading: chartLoading } = useKeywordTrends(debouncedQuery, period)
 
-  const trending = (trendingData as string[]) ?? []
+  // Trending returns [{ keyword, listing_count, avg_revenue }] or string[]
+  const trending: string[] = ((trendingData as any[]) ?? []).map((t: any) =>
+    typeof t === 'string' ? t : (t.keyword ?? '')
+  ).filter(Boolean)
   const chart    = chartData as any
 
   return (

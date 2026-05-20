@@ -50,8 +50,14 @@ export default function ResearchPage() {
     [debouncedQuery, router],
   )
 
-  const items = (results as any[]) ?? []
-  const trendingItems = (trending as string[]) ?? []
+  // Search endpoint returns { keyword, total, results[] } or a plain array
+  const items: any[] = Array.isArray(results)
+    ? results
+    : ((results as any)?.results ?? [])
+  // Trending returns [{ keyword, listing_count, avg_revenue }] or string[]
+  const trendingItems: string[] = ((trending as any[]) ?? []).map((t: any) =>
+    typeof t === 'string' ? t : (t.keyword ?? '')
+  ).filter(Boolean)
 
   return (
     <div className="animate-fade-up">
