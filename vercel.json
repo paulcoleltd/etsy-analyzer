@@ -4,7 +4,6 @@
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "rootDirectory": "apps/web",
   "rewrites": [
     { "source": "/api/auth/:path*", "destination": "/api/auth/:path*" }
   ]
