@@ -5,7 +5,7 @@ WORKDIR /app
 RUN npm install -g pnpm@10
 
 # Copy workspace files needed to resolve packages
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/ ./packages/
 COPY services/auth-service/ ./services/auth-service/
 

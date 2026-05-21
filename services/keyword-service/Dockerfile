@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml ./
+COPY services/keyword-service/pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
         fastapi==0.111.1 \
@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
         structlog==24.4.0 \
         python-dotenv==1.0.1
 
-COPY src/ ./src/
+COPY services/keyword-service/src/ ./src/
 
 EXPOSE 8000
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]

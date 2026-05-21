@@ -3,7 +3,7 @@ WORKDIR /app
 
 RUN npm install -g pnpm@10
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/ ./packages/
 COPY services/competitor-service/ ./services/competitor-service/
 

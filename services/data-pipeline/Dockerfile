@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgtk-3-0 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml ./
+COPY services/data-pipeline/pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
         playwright==1.45.0 \
@@ -35,8 +35,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Install Playwright browsers
 RUN playwright install --with-deps chromium
 
-COPY src/ ./src/
-COPY models/ ./models/ 2>/dev/null || true
+COPY services/data-pipeline/src/ ./src/
+COPY services/data-pipeline/models/ ./models/
 
 # Default mode: worker (can be overridden via DATA_PIPELINE_MODE env var)
 ENV DATA_PIPELINE_MODE=worker

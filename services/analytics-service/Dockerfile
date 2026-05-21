@@ -5,7 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml ./
+COPY services/analytics-service/pyproject.toml ./
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
         fastapi==0.111.1 \
@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
         tenacity==8.5.0 \
         cryptography==42.0.8
 
-COPY src/ ./src/
+COPY services/analytics-service/src/ ./src/
 
 EXPOSE 8000
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
