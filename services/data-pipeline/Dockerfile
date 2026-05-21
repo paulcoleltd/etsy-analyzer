@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
         psycopg2-binary==2.9.9 \
         "elasticsearch[async]==8.14.0" \
         redis==5.0.7 \
-        bullmq==0.3.4 \
+        bullmq==0.3.0 \
         "scikit-learn==1.5.1" \
         xgboost==2.1.0 \
         numpy==1.26.4 \
