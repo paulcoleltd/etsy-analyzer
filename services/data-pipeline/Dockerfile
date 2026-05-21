@@ -36,9 +36,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
 RUN playwright install --with-deps chromium
 
 COPY services/data-pipeline/src/ ./src/
-# models/ is optional (pre-trained ML models — may not be committed)
+# models/ placeholder — ML models loaded at runtime or mounted via volume
 RUN mkdir -p ./models
-COPY services/data-pipeline/models* ./models/ 2>/dev/null || true
 
 # Default mode: worker (can be overridden via DATA_PIPELINE_MODE env var)
 ENV DATA_PIPELINE_MODE=worker

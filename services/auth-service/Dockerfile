@@ -9,7 +9,7 @@ COPY packages/ ./packages/
 COPY services/ ./services/
 
 # Install all workspace deps (needed so drizzle-orm & express resolve correctly)
-RUN pnpm install --frozen-lockfile
+RUN echo 'shamefully-hoist=true' >> .npmrc && pnpm install --frozen-lockfile
 
 # Build shared packages then auth-service
 RUN pnpm --filter @etsy-analyzer/types build

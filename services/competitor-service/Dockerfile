@@ -7,7 +7,7 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json ./
 COPY packages/ ./packages/
 COPY services/ ./services/
 
-RUN pnpm install --frozen-lockfile
+RUN echo 'shamefully-hoist=true' >> .npmrc && pnpm install --frozen-lockfile
 
 RUN pnpm --filter @etsy-analyzer/types build
 RUN pnpm --filter @etsy-analyzer/config build
