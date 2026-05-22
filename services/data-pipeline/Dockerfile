@@ -33,7 +33,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
         fake-useragent==1.5.1
 
 # Install Playwright browsers
-RUN playwright install --with-deps chromium
+# System deps already installed above; install browser binary only
+RUN playwright install chromium
 
 COPY services/data-pipeline/src/ ./src/
 # models/ placeholder — ML models loaded at runtime or mounted via volume
